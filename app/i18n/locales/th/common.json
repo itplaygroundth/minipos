@@ -1,0 +1,46 @@
+{
+ "login":{
+  "title": "เข้าสู่ระบบ",
+  "username": "รหัสผู้ใข้",
+  "email": "อีเมล",
+  "password": "รหัสผ่าน",
+  "invalidEmail": "ที่อยู่อีเมลไม่ถูกต้อง",
+  "passwordLength": "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร"
+    },
+    "button":{
+      "togglelang":"ภาษา"
+    },
+    "menu":{
+      "overview":"หน้าหลัก",
+      "customers":"ลูกค้า",
+      "products":"สินค้า",
+      "settings":"ตั้งค่า",
+      "logout":"ออกจากระบบ",
+      "profile":"โปรไฟล์",
+      "account":"บัญชี",
+      "appearance":"รูปลักษณ์",
+      "notifications":"แจ้งเตือน",
+      "display":"หน้าจอ"
+    },
+    "transaction":{
+      "columns":{
+        "name":"ชื่อสินค้า",
+        "quantity":"จำนวน",
+        "unit":"หน่วยนับ",
+        "price":"ราคา",
+        "total":"ยอดรวม",
+        "rowNumber":"ลำดับ"
+      }
+    },
+    "common":{
+      "previous":"ก่อนหน้า",
+      "next":"ถัดไป",
+      "of": "ของ",
+      "rowSelected":"จากทั้งหมด",
+      "noResults": "ไม่พบข้อมูล",
+      "error":{
+        "title":"มีข้อผิดผลาด!"
+      }
+    }
+
+}

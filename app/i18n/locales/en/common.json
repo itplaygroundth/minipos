@@ -1,0 +1,48 @@
+{
+
+  "login": {
+    "title": "Login",
+    "email": "Email",
+    "username": "Username",
+    "password": "Password",
+    "register": "Register",
+    "invalidEmail": "Invalid email address",
+    "passwordLength": "Password must be at least 6 characters long"
+  },
+  "button":{
+    "togglelang":"Change Lang"
+  },
+  "menu":{
+    "overview":"Overviews",
+    "customers":"Customers",
+    "products":"Products",
+    "settings":"Settings",
+    "logout":"Logout",
+    "profile":"Profile",
+    "account":"Account",
+    "appearance":"Appearance",
+    "notifications":"Notifications",
+    "display":"Display"
+
+  },
+  "transaction":{
+    "columns":{
+      "name":"Item Name",
+      "quantity":"Quantity",
+      "unit":"Unit",
+      "price":"Price",
+      "total":"Total",
+      "rowNumber":"No"
+    }
+  },
+  "common":{
+  "previous":"Previous",
+  "next":"Next",
+  "of": "Of",
+  "rowSelected":"Rows Selected",
+  "noResults": "No Results",
+  "error":{
+    "title":"Error"
+  }
+  }
+} 

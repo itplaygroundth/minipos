@@ -1,0 +1,12 @@
+{
+
+  "login": {
+    "title": "Login",
+    "email": "Email",
+    "username": "Username",
+    "password": "Password",
+    "register": "Register",
+    "invalidEmail": "Invalid email address",
+    "passwordLength": "Password must be at least 6 characters long"
+  }
+} 

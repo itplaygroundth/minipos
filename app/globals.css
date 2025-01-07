@@ -2,20 +2,163 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+body {
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+    --primary: 24 9.8% 10%;
+    --primary-foreground: 60 9.1% 97.8%;
+    --secondary: 60 4.8% 95.9%;
+    --secondary-foreground: 24 9.8% 10%;
+    --muted: 60 4.8% 95.9%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --accent: 60 4.8% 95.9%;
+    --accent-foreground: 24 9.8% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 20 14.3% 4.1%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 60 9.1% 97.8%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --primary: 60 9.1% 97.8%;
+    --primary-foreground: 24 9.8% 10%;
+    --secondary: 12 6.5% 15.1%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 12 6.5% 15.1%;
+    --input: 12 6.5% 15.1%;
+    --ring: 24 5.7% 82.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.table-striped {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-striped th, .table-striped td {
+  padding: 8px;
+  /* text-align: right; */
+}
+
+.table-striped tr:nth-child(even) {
+  background-color: #f2f2f2; /* สีพื้นหลังสำหรับแถวคู่ */
+}
+
+.table-striped tr:nth-child(odd) {
+  background-color: #ffffff; /* สีพื้นหลังสำหรับแถวคี่ */
+}
+.bill .print-button {
+  display: inline-block; /* แสดงปกติในหน้าจอ */
+}
+
+@media print {
+
+    @page {
+        size: 8cm auto; /* กำหนดความกว้าง 8cm และความสูงอัตโนมัติ */
+        margin: 0; /* กำหนดมาร์จินรอบๆ หน้าเป็น 0 */
+    }
+
+    body {
+        margin: 0; /* ปรับมาร์จินในบอดี้ให้เป็น 0 */
+        font-family: monospace; /* ใช้ฟอนต์แบบ monospace เพื่อให้ดูเหมือนบิล */
+        font-size: 12pt; /* กำหนดขนาดฟอนต์สำหรับบิล */
+        width: 8cm; /* กำหนดความกว้างของ body ให้เท่ากับ 8cm */
+        padding: 10px; /* กำหนด padding ตามต้องการ */
+    }
+
+
+  .bill {
+    width: 8cm; /* กำหนดความกว้างของบิล */
+    padding: 10px; /* กำหนดระยะห่างภายใน */
+    border: 1px solid #000; /* กำหนดเส้นขอบ */
+    font-family: Arial, sans-serif; /* กำหนดฟอนต์ */
+    font-size: 12px; /* ขนาดฟอนต์ */
+    line-height: 1.5; /* ระยะห่างระหว่างบรรทัด */
+    margin: 0 auto; /* จัดกลาง */
+    background-color: #fff; /* สีพื้นหลัง */
+}
+
+  .bill h1 {
+      font-size: 16px; /* ขนาดฟอนต์สำหรับหัวข้อ */
+      text-align: center; /* จัดกลาง */
+      margin-bottom: 10px; /* ระยะห่างด้านล่าง */
+  }
+
+  .bill p {
+      margin: 5px 0; /* ระยะห่างด้านบนและด้านล่าง */
+  }
+
+  .bill .total {
+      font-weight: bold; /* ทำให้ตัวหนา */
+      text-align: right; /* จัดชิดขวา */
+  }
+
+  .bill .terms {
+      margin-top: 10px; /* ระยะห่างด้านบน */
+      font-size: 10px; /* ขนาดฟอนต์สำหรับเงื่อนไข */
+  } 
+
+  .bill .print-button {
+    display: none; /* ซ่อนปุ่มเมื่อพิมพ์ */
+  }
+   .print-dialog {
+    display: none;
+  }
 }
