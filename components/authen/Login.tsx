@@ -7,25 +7,44 @@ import { Authen } from "@/types";
 import { useTranslation } from "@/app/i18n/client";
 //import { useTranslation } from 'next-i18next';
 //import { Button } from '@/components/ui/button';
-import { Button, Input, Label, Form, FormField, FormItem, FormMessage,Separator } from '@/components/ui';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Button, Input, Label,Separator,Select,SelectContent, SelectTrigger, SelectItem, SelectValue } from '@/components/ui';
 import { useToast } from "@/hooks/use-toast";
-import { Signin } from "@/actions";
+import { Signin,Login } from "@/actions";
 import { useRouter } from 'next/navigation';
 import LanguageToggle from "../language-toggle";
  
 import Cookies from 'js-cookie'; 
+ 
 
 const loginSchema = z.object({
   username: z.string(),
-  password: z.string().min(6, "Password must be at least 6 characters long"),
-  prefix: z.string().optional()
+  password: z.string(),//.min(6, "Password must be at least 6 characters long"),
+  prefix: z.string(),
+  server: z.string(),
+  dbname: z.string(),
+  posid: z.string()
 });
 
-export default function Login() {
+export default function LoginComponent() {
     //const cookieStore = await cookies()
     //const defaultOpen = cookieStore.get("sidebar:state")?.value === "true"
-    const lngCookie = Cookies.get('lng');
-    const initialLocale = lngCookie ? lngCookie.valueOf() : 'en'; 
+  
+  const posIdsEnv = process.env.NEXT_PUBLIC_POSID;
+
+    // ตรวจสอบว่่าไม่เป็น undefined ก่อนการแปลง
+ 
+  const lngCookie = Cookies.get('lng');
+  const posid = Cookies.get('posid')
+  const initialLocale = lngCookie ? lngCookie.valueOf() : 'en'; 
   const { t } = useTranslation(initialLocale,'common',undefined);
   const [error, setError] = useState("");
   const [showing,setShowing] = useState(false)
@@ -37,7 +56,10 @@ export default function Login() {
     defaultValues: {
         username: "", // กำหนดค่าเริ่มต้นให้กับ username
         password: "", // กำหนดค่าเริ่มต้นให้กับ password
-        prefix: "ckd"
+        prefix: "ckd",
+        server:"",
+        dbname:"",
+        posid:posid
       }
     })
     const redirect = ()=>{
@@ -48,8 +70,8 @@ export default function Login() {
   const handleSubmit: SubmitHandler<Authen> =  async (data: z.infer<typeof loginSchema>) => {
 
     
-    const response =  await Signin({username:data.username,password:data.password,prefix:"ckd"})
-  
+    //const response =  await Signin({username:data.username,password:data.password,prefix:"TEST01",server:"BLACKNITRO"})
+    const response =  await Login({username:data.username,password:data.password,dbname:"TEST01",server:"BLACKNITRO",prefix:"TEST01",posid:data.posid})
      
       if (response.Status) {
         
@@ -58,6 +80,7 @@ export default function Login() {
             title: t('login.success'),
             description: response.Message,
           });
+          Cookies.set('posid',data.posid)
           router.push(`/${"en"}/home`);
       } else {
         toast({
@@ -92,7 +115,10 @@ export default function Login() {
     // }
     //}
   };
-
+  let posIds: string[] = [];
+  if (posIdsEnv) {
+      posIds = JSON.parse(posIdsEnv);  // แปลงจาก string เป็น array
+  }
   return (
     <div>
          <div className= "bg-gray-100 min-h-screen flex items-center justify-center p-6">
@@ -105,6 +131,34 @@ export default function Login() {
         
       <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)}>
+      <FormField
+          control={form.control}
+          name="posid"
+          render={({ field }) => (
+            <FormItem className="mb-5">
+              <FormLabel>{t('common.posid.title')}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    {/* <SelectValue placeholder={t('common.posid.placeholder')} /> */}
+                    <SelectValue  />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {
+                  posIds.map((item)=>(
+                     <SelectItem key={item} value={`${item}`}>{`${item}`}</SelectItem>
+                  ))
+                  }
+                </SelectContent>
+              </Select>
+              {/* <FormDescription>
+              {t('common.saleprice.placeholder')}
+              </FormDescription> */}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField 
          control={form.control}
          name="username"

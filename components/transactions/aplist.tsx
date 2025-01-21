@@ -183,12 +183,12 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
         { id: 'price', header: 'ราคา' },
     ], []);
  
-    console.log(data)
+ 
 
     const filteredData = data?.filter((item) => 
         (item.name1.toLowerCase().includes(searchTerm.toLowerCase()) || 
         item.code.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (/\d/.test(searchTerm) || /^[a-zA-Z]*$/.test(searchTerm))
+        (/\d/.test(searchTerm) || /^[a-zA-Z\u0E00-\u0E7F]*$/.test(searchTerm))
     );
 
     //const paginatedData = filteredData.slice(currentPage * pageSize, (currentPage + 1) * pageSize); // แบ่งข้อมูลตามหน้า
@@ -291,7 +291,7 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
         //   },
         // },
       ]
-      const createTable = (data: any[], columns: any[]) => {
+    const createTable = (data: any[], columns: any[]) => {
         return useReactTable({
             data: data,
             columns: columns,
@@ -323,10 +323,10 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
     // สร้างตัวแปร table โดยส่ง data และ columns
     const table = createTable(items, columns);
  
-      if (isLoading) {
-        return <div>Loading {t('transaction.title')}...</div>;
-      }
-      const handlePrint = () => {
+    if (isLoading) {
+    return <div>Loading {t('transaction.title')}...</div>;
+    }
+    const handlePrint = () => {
         const printContent = document.querySelector('.bill'); // เลือก div ที่ต้องการพิมพ์
         const win = window.open('', '', 'width=800,height=600'); // เปิดหน้าต่างใหม่
 
@@ -458,8 +458,20 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
             setShowPanel(false); // ซ่อน Panel เมื่อกด ESC
         } else if (event.key === "Enter") {
             if (filteredData.length === 1) {
-                handleSelectItem(filteredData[0]); 
-                setSearchTerm('');// เลือกรายการเดียวที่แสดง
+                // handleSelectItem(filteredData[0]); 
+                // setSearchTerm('');// เลือกรายการเดียวที่แสดง
+                const selectedItem = filteredData[0];
+                const item: Items = {
+                    rowNumber: 0, // กำหนดค่าเริ่มต้น
+                    code: selectedItem.code,
+                    name: selectedItem.name1,
+                    quantity: 1, // กำหนดค่าเริ่มต้น
+                    price: 0, // กำหนดค่าเริ่มต้น
+                    total: 0, // กำหนดค่าเริ่มต้น
+                    unit: '', // กำหนดค่าเริ่มต้น
+                };
+                handleSelectItem(item);
+                setSearchTerm(''); // เลือกรายการเดียวที่แสดง
             }
         }
     };
@@ -479,8 +491,6 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
         return filteredData?.slice(startIndex, endIndex);
     }, [filteredData, currentPage, pageSize]); 
    
-   
-
     // const handleReceivedAmountEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
     //     if (event.key === "Enter") {
     //         //const totalAmount = items.reduce((total, item) => total + item.total, 0);
@@ -499,7 +509,7 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
     //     }
     // };
 
-    const handleSave:SubmitHandler<typeof recieveSchema> =  async (data:z.infer<typeof recieveSchema>) => {
+    const handleSave:SubmitHandler<z.infer<typeof recieveSchema>> =  async (data:z.infer<typeof recieveSchema>) => {
         data.totalamount = items.reduce((total, item) => total + item.total, 0)    
         try {
             if(data.recievemoney && data.recievemoney>0){
@@ -548,7 +558,7 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
                         title: t('common.error.title'),
                         description: "ยอดรับเงินไม่ถูกต้อง!",
                     });
-            const inputElement = document.getElementById('recievemoney-input');
+            const inputElement = document.getElementById('recievemoney-input') as HTMLInputElement;
                     if (inputElement) {
                         inputElement.focus(); // โฟกัสไปที่ input
                         inputElement.select(); // เลือกเนื้อหาใน input
@@ -590,7 +600,7 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
                     <div className="flex flex-1 flex-col gap-4 p-4">
                     
                         
-                        <Label className='p-2'>{"X จำนวนที่ต้องการขาย"}</Label>
+                        {/* <Label className='p-2'>{"X จำนวนที่ต้องการขาย"}</Label>
                         <Input 
                             id="quantity-input"
                             type="text" 
@@ -605,11 +615,11 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
                                     document.getElementById('searchTerm-input')?.focus();
                                 }
                             }}
-                        />
-                         <Label className='p-2'>{"เลือกรายการสินค้า"}</Label>
+                        /> */}
+                         <Label className='p-2'>{"รหัสตัวแทน"}</Label>
                         <Input 
                             id="searchTerm-input"
-                            placeholder="ค้นหารายการสินค้า" 
+                            placeholder="รหัสตัวแทนหรือเจ้าหนี้" 
                             value={searchTerm} 
                             onChange={(e) => {
                                 setSearchTerm(e.target.value); // อัปเดตสถานะการค้นหา
@@ -617,20 +627,40 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
                             }} 
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && filteredData?.length === 1) {
-                                    handleSelectItem(filteredData[0]); // เลือกรายการเดียวที่แสดง
+                                    const selectedItem = filteredData[0];
+                                    const item: Items = {
+                                        rowNumber: 0, // กำหนดค่าเริ่มต้น
+                                        code: selectedItem.code,
+                                        name: selectedItem.name1,
+                                        quantity: 1, // กำหนดค่าเริ่มต้น
+                                        price: 0, // กำหนดค่าเริ่มต้น
+                                        total: 0, // กำหนดค่าเริ่มต้น
+                                        unit: '', // กำหนดค่าเริ่มต้น
+                                    };
+                                    handleSelectItem(item); // เลือกรายการเดียวที่แสดง
                                     //document.getElementById('quantity-input')?.focus(); // โฟกัสที่ช่อง quantity
                                 }
+                                // if (e.key === "Enter" && filteredData?.length === 1) {
+                                //     handleSelectItem(filteredData[0]); // เลือกรายการเดียวที่แสดง
+                                //     //document.getElementById('quantity-input')?.focus(); // โฟกัสที่ช่อง quantity
+                                // }
                             }}
                         />
                         {/* <Button onClick={addItem}>เพิ่มรายการ</Button> */}
                         <Separator />
-                        <Label className='p-2'>{"รหัสลูกค้า"}</Label>
+                        {/* <Label className='p-2'>{"รหัสลูกค้า"}</Label>
                         <Input 
                             id="customerid-input"
                             placeholder="รหัสลูกค้าหรือสมาชิก" 
                             value={customerId} 
                             onChange={(e) => setCustomerId(e.target.value)} 
-                        />
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && filteredData?.length === 1) {
+                                    handleSelectItem(filteredData[0]); // เลือกรายการเดียวที่แสดง
+                                    //document.getElementById('quantity-input')?.focus(); // โฟกัสที่ช่อง quantity
+                                }
+                            }}
+                        /> */}
                         <Button onClick={handleOpenDialog}>กดรับเงิน</Button>
                     
                     
@@ -764,7 +794,7 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
             {showPanel && (
                 <div className="fixed top-30 left-0 right-0 z-50 bg-white shadow-lg p-4" style={{ width: 'calc(100% - 300px)', left: '300px', maxHeight: '80vh', overflowY: 'auto' }}>
                     <div className="flex justify-between items-center">
-                        <h2 className="text-lg font-bold bg-gray-200 bg-opacity-50 rounded p-3">ค้นหา และ เลือกสินค้า</h2>
+                        <h2 className="text-lg font-bold bg-gray-200 bg-opacity-50 rounded p-3">ค้นหา และ เลือกเจ้าหนี้</h2>
                         <Button variant="outline" onClick={() => setShowPanel(false)}>ปิด</Button>
                     </div>
                     <div className="rounded-md border bg-background/95">
@@ -778,13 +808,24 @@ const APListComponent:  React.FC<APListProps> = ({ data, message, status }) => {
                             </TableHeader>
                             <TableBody>
                                 {paginatedData?.length > 0 ? (
-                                    paginatedData.map((item, index) => (
-                                        <TableRow key={index} onClick={() => handleSelectItem(item)} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
-                                            {modalColumns.map(column => (
-                                                <TableCell key={column.id}>{item[column.id]}</TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))
+                                    paginatedData.map((item, index) => {
+                                        const newItem: Items = {
+                                            rowNumber: 0, // กำหนดค่าเริ่มต้น
+                                            code: item.code,
+                                            name: item.name1,
+                                            quantity: 1, // กำหนดค่าเริ่มต้น
+                                            price: 0, // กำหนดค่าเริ่มต้น
+                                            total: 0, // กำหนดค่าเริ่มต้น
+                                            unit: '', // กำหนดค่าเริ่มต้น
+                                        };
+                                        return (
+                                            <TableRow key={index} onClick={() => handleSelectItem(newItem)} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
+                                                {modalColumns.map(column => (
+                                                    <TableCell key={column.id}>{item[column.id as keyof ModalDataItem]}</TableCell>
+                                                ))}
+                                            </TableRow>
+                                        );
+                                    })
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={modalColumns?.length} className="h-24 text-center">

@@ -4,6 +4,7 @@ export interface SessionData {
   userId?: string;
   username?: string;
   prefix?: string;
+  role:string;
   isLoggedIn: boolean;
   token?:string;
   customerCurrency?:string;
@@ -12,6 +13,7 @@ export interface SessionData {
 
 export const defaultSession: SessionData = {
     isLoggedIn: false,
+    role:"user"
   };
   
 

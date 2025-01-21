@@ -1,28 +1,5 @@
-"use client"
-import React, { useState, useEffect, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
-import { toast } from '@/hooks/use-toast'
-import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-  createColumnHelper,
-  flexRender,
-  FilterFn,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
-
-import {
-  RankingInfo,
-  rankItem,
-  compareItems,
-} from '@tanstack/match-sorter-utils'
- 
+'use client'
+import React, { useMemo, useState, useEffect } from 'react';
 import { Button, Input, Table,TableFooter,TableBody, TableCell, TableHead, TableHeader, TableRow ,  Select,
     SelectContent,
     SelectItem,
@@ -38,7 +15,20 @@ import { Button, Input, Table,TableFooter,TableBody, TableCell, TableHead, Table
     FormField,
     FormItem,Skeleton,
     DialogDescription} from '@/components/ui';
+import {
+    ColumnDef,
+    ColumnFiltersState,
+    SortingState,
+    VisibilityState,
+    createColumnHelper,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
  
+  } from "@tanstack/react-table"
 import { useTranslation } from '@/app/i18n/client';
 import { languages } from '@/app/i18n/setting'
 import { usePathname } from 'next/navigation';
@@ -47,17 +37,30 @@ import { Separator } from '@radix-ui/react-separator';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
 import { FormControl, FormDescription, FormLabel } from '../ui/form';
-
-import { string, z } from "zod";
+interface Items {
+    rowNumber:number;
+    code:string;
+    name: string;
+    quantity: number;
+    price:number;
+    total:number;
+    unit:string;
+}
+interface BCAr {
+    rowNumber:number;
+    code:string;
+    name: string;
+    address:string;
+   
+}
+import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
  
 import Cookies from 'js-cookie'; 
 import { GetItemList, GetSettings } from '@/actions';
 import { pages } from 'next/dist/build/templates/app-page';
-import {Items,BCAr} from "@/types"
-import TableList from './tablelist'
-import DebouncedInput from '../debouncedinput'
+
 //  interface DataTableProps<TData, TValue> {
 //   columns: ColumnDef<TData, TValue>[]
 //   data: TData[]
@@ -94,7 +97,7 @@ interface SaleProps {
 }
 
 const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
-  //  const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
     const [searchArTerm, setSearchArTerm] = useState('');
     
     const [quantity, setQuantity] = useState(1);
@@ -127,10 +130,15 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
     const [isBillDialogOpen, setIsBillDialogOpen] = useState(false); // สำหรับ Dialog แสดงบิล
     const [changeAmount, setChangeAmount] = useState(0); // สถานะสำหรับยอดเงินทอน
     const [billDetails, setBillDetails] = useState<any>(null); // สถานะสำหรับรายละเอียดบิล
-    const [posid,setPosid] = useState("")
-    const [globalFilter, setGlobalFilter] = useState('')
-    const [filteredDataItem,setfilteredDataItem] = useState([])
-  
+    const [posid,setPosid] = useState(Cookies?.get('posid') || "")
+    
+    // const handlePrint = () => {
+    //     // ฟังก์ชันสำหรับพิมพ์บิล
+    //     window.print();
+    // };
+
+
+
     const form = useForm<z.infer<typeof recieveSchema>>({
         resolver: zodResolver(recieveSchema),
         defaultValues:{
@@ -167,9 +175,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
 
     useEffect(()=>{
         const fetchSetting = async ()=>{
-            const id = Cookies?.get('posid') || "POS"
-            setPosid(id)
-            const response = await  GetSettings(id)
+            const response = await  GetSettings(posid)
             if(response.Status){
                 setPrice(JSON.parse(response.Data.data).price)
             
@@ -228,17 +234,11 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         // { id: 'price2', header: 'ราคา2' },
         // { id: 'price3', header: 'ราคา3' },
     ], []);
-    // const filteredDataItem = data?.Items.filter(item => 
-    //     (item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    //     item.code.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    //     (/\d/.test(searchTerm) || /^[a-zA-Z\u0E00-\u0E7F]*$/.test(searchTerm))
-    // );
-    // const filteredData = games?.filter((item:Games) => 
-    //     (item?.name?.toLowerCase().includes(searchTerm?.toLowerCase()) || 
-    //     item?.productCode?.toLowerCase().includes(searchTerm?.toLowerCase()) || 
-    //     item?.product?.toLowerCase().includes(searchTerm?.toLowerCase())) &&
-    //     (/\d/.test(searchTerm) || /^[a-zA-Z\u0E00-\u0E7F]*$/.test(searchTerm))
-    //   );
+    const filteredDataItem = data?.Items.filter(item => 
+        (item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        item.code.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (/\d/.test(searchTerm) || /^[a-zA-Z\u0E00-\u0E7F]*$/.test(searchTerm))
+    );
      
     const filteredDataAr = data?.Customers.filter(item => 
         (item?.name?.toLowerCase().includes(searchArTerm?.toLowerCase()) || 
@@ -265,7 +265,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                {info.getValue()} 
              </span>
            )
-          },
+          }
         }),
         columnHelper.accessor('quantity', {
           header: t('transaction.columns.quantity'),
@@ -493,7 +493,6 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
     };
     
     const handleSelectItem = (item: Items) => {
-       // console.log(item)
         // ตรวจสอบว่ามีสินค้านี้อยู่ในรายการหรือไม่
         const existingItemIndex = items.findIndex(existingItem => existingItem.code === item.code);
        // console.log(`${item}.${item[price as keyof Items]}`)
@@ -512,13 +511,9 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         }
         const newTotalAmount = items.reduce((total, item) => total + item.total, 0);
         setTotalAmount(newTotalAmount); // ตั้งค่า totalAmount ใหม่
-         // ซ่อน Panel
+        setShowPanelItem(false); // ซ่อน Panel
         setQuantity(1); // รีเซ็ตจำนวน
-        
-        //setSearchTerm('');
-       // setGlobalFilter("")
-      //  if(showPanelItem)
-       setShowPanelItem(false);
+        setSearchTerm('');
     };
     const handleSelectAr = (item: BCAr) => {
         // ตรวจสอบว่ามีสินค้านี้อยู่ในรายการหรือไม่
@@ -554,7 +549,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         } else if (event.key === "Enter") {
             if (filteredDataItem.length === 1) {
                 handleSelectItem(filteredDataItem[0]); 
-                setGlobalFilter('');// เลือกรายการเดียวที่แสดง
+                setSearchTerm('');// เลือกรายการเดียวที่แสดง
             } else if (filteredDataAr.length === 1) {
                 handleSelectAr(filteredDataAr[0]); 
                 setSearchArTerm('');
@@ -571,11 +566,11 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         };
     }, []);
    
-    // const paginatedDataItem = useMemo(() => {
-    //     const startIndex = currentPage * pageSize;
-    //     const endIndex = startIndex + pageSize;
-    //     return filteredDataItem?.slice(startIndex, endIndex);
-    // }, [filteredDataItem, currentPage, pageSize]); 
+    const paginatedDataItem = useMemo(() => {
+        const startIndex = currentPage * pageSize;
+        const endIndex = startIndex + pageSize;
+        return filteredDataItem?.slice(startIndex, endIndex);
+    }, [filteredDataItem, currentPage, pageSize]); 
    
     const paginatedDataAr = useMemo(() => {
         const startIndex = currentPage * pageSize;
@@ -701,7 +696,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                 <div className="bg-muted/50 w-full sm:w-[300px] shadow  backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
                     <div className="flex flex-1 flex-col gap-4 p-4">
                     
-                    <Label className='p-2'>{`${t('transaction.posid')} : ${posid}`}</Label>
+                    <Label className='p-2'>{`${t('transaction.posid')} : ${posid?posid:""}`}</Label>
                         <Label className='p-2'>{"X จำนวนที่ต้องการขาย"}</Label>
                         <Input 
                             id="quantity-input"
@@ -710,39 +705,16 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                             value={quantity} 
                             onChange={(e) => setQuantity(Number(e.target.value))} 
                             onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    //handleSelectItem(filteredDataItem[0]); // เลือกรายการเดียวที่แสดง
-                                    setGlobalFilter(''); // เคลียร์ searchTerm
+                                if (e.key === "Enter" && filteredDataItem.length === 1) {
+                                    handleSelectItem(filteredDataItem[0]); // เลือกรายการเดียวที่แสดง
+                                    setSearchTerm(''); // เคลียร์ searchTerm
                                     //setQuantity(1); // ตั้งค่า quantity เป็น 1
                                     document.getElementById('searchTerm-input')?.focus();
                                 }
                             }}
                         />
                          <Label className='p-2'>{"เลือกรายการสินค้า"}</Label>
-                         <DebouncedInput
-                          id="searchTerm-input"
-                          placeholder="ค้นหารายการสินค้า" 
-                          value={globalFilter ?? ''}
-                          onChange={value => {
-                          
-                            setGlobalFilter(String(value))
-                            //setSearchTerm(String(value)); // อัปเดตสถานะการค้นหา
-                            setShowPanelItem(true); // แสดง Panel เมื่อมีการพิมพ์
-                            
-                            if(showPanelAr)
-                                setShowPanelAr(false);   
-                            
-                        }}
-                          className="p-2 font-lg shadow border border-block max-w-sm"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && filteredDataItem.length === 1) {
-                                handleSelectItem(filteredDataItem[0]); // เลือกรายการเดียวที่แสดง
-                                //document.getElementById('quantity-input')?.focus(); // โฟกัสที่ช่อง quantity
-                                setShowPanelItem(false)
-                            }
-                        }}
-                         />
-                        {/* <Input 
+                        <Input 
                             id="searchTerm-input"
                             placeholder="ค้นหารายการสินค้า" 
                             value={searchTerm} 
@@ -758,7 +730,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                                     //document.getElementById('quantity-input')?.focus(); // โฟกัสที่ช่อง quantity
                                 }
                             }}
-                        /> */}
+                        />
                         {/* <Button onClick={addItem}>เพิ่มรายการ</Button> */}
                         <Separator />
                         <Label className='p-2'>{"รหัสลูกค้า: "}<span className='text-green-600'>{`${customer?customer.name:"ยังไม่กำหนดรหัสลูกค้า"}`}</span> </Label>
@@ -909,21 +881,115 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                  
                      
                 </div>
-                
             </div>
 
             {/* Panel สำหรับแสดงตาราง */}
-           
-            {showPanelItem?( <TableList 
-             lang={lang}
-             items={data.Items}
-             setShowPanelItem={setShowPanelItem}
-             modalItemColumns={modalItemColumns} 
-             handleSelectItem={handleSelectItem}
-             globalFilter={globalFilter}
-             setGlobalFilter={setGlobalFilter}
-             setfilteredDataItem={setfilteredDataItem}
-             />):<></>}
+            {showPanelItem && (
+                <div className="fixed top-30 left-0 right-0 z-50 bg-white shadow-lg p-4" style={{ width: 'calc(100% - 300px)', left: '300px', maxHeight: '80vh', overflowY: 'auto' }}>
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-lg font-bold bg-gray-200 bg-opacity-50 rounded p-3">ค้นหา และ เลือกสินค้า</h2>
+                        <Button variant="outline" onClick={() => setShowPanelItem(false)}>ปิด</Button>
+                    </div>
+                    <div className="rounded-md border bg-background/95">
+                        <Table className="table-striped">
+                            <TableHeader>
+                                <TableRow>
+                                    {modalItemColumns.map(column => (
+                                        <TableHead key={column.id}>{column.header}</TableHead>
+                                    ))}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paginatedDataItem.length > 0 ? (
+                                    paginatedDataItem.map((item, index) => (
+                                        <TableRow key={index} onClick={() => handleSelectItem(item)} className={index % 2 === 0 ? 'bg-gray-100' : 'bg-white'}>
+                                            {modalItemColumns.map(column => (
+                                                <TableCell key={column.id}>{item[column.id as keyof Items]}</TableCell>
+                                                
+                                                
+                                            ))}
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={modalItemColumns.length} className="h-24 text-center">
+                                            {t('common.noResults')}
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div className="flex items-center justify-end space-x-2 py-4">
+                        {/* <div className="flex-1 text-sm text-muted-foreground">
+                            {table.getFilteredSelectedRowModel().rows.length} {t('common.of')}{" "}
+                            {table.getFilteredRowModel().rows.length} {t('common.rowSelected')}.
+                        </div> */}
+                        <div className="flex items-center space-x-2">
+                        <Select
+                             //value={`${pageSize}`} // ใช้ pageSize ที่ตั้งค่า
+                            //position="popper"
+                            //sideOffset={5}
+                            onValueChange={(value) => {
+                                const newSize = Number(value);
+                                table.setPageSize(newSize);
+                            }}
+                            // onValueChange={(value) => {
+                            //     const newSize = Number(value);
+                            //     setPageSize(newSize);
+                            //     table.setPageSize // ตั้งค่า pageSize ใหม่
+                            //     // คำนวณจำนวนหน้าใหม่เมื่อเปลี่ยนขนาดหน้า
+                            //     const newTotalPages = Math.ceil(filteredDataItem.length / newSize);
+                            //     console.log(`Total Pages: ${newTotalPages}`); // แสดงจำนวนหน้าใหม่
+                            // }}
+                        >
+                            <SelectTrigger className="h-8 w-[70px]">
+                                <SelectValue placeholder={pageSize} />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                                {[10, 20, 30, 40, 50].map((pageSize) => (
+                                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                                        {pageSize}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                            <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.firstPage()}
+                            disabled={!table.getCanPreviousPage()}
+                            >
+                            {'<<'}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => table.previousPage()}
+                                disabled={!table.getCanPreviousPage()}
+                            >
+                                {t('common.previous')}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => table.nextPage()}
+                                disabled={!table.getCanNextPage()}
+                            >
+                                {t('common.next')}
+                            </Button>
+                            <Button 
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.lastPage()}
+                            disabled={!table.getCanNextPage()}
+                            >
+                            {'>>'}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {showPanelAr && (
                 <div className="fixed top-30 left-0 right-0 z-50 bg-white shadow-lg p-4" style={{ width: 'calc(100% - 300px)', left: '300px', maxHeight: '80vh', overflowY: 'auto' }}>
                     <div className="flex justify-between items-center">

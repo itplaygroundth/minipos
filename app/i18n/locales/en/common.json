@@ -1,6 +1,7 @@
 {
 
   "login": {
+    "posid":"POS ID",
     "title": "Login",
     "email": "Email",
     "username": "Username",
@@ -33,7 +34,19 @@
       "price":"Price",
       "total":"Total",
       "rowNumber":"No"
-    }
+    },
+    "posid":"Machin ID"
+  },
+  "settings":{
+    "base_currency":"Base Currency",
+    "target_currency":"Target Currency",
+    "button":{
+      "update":"Update",
+      "save":"Save",
+      "cancel":"Canel"
+    },
+    "title":"Settings",
+    "description":"Settings of system"
   },
   "common":{
   "previous":"Previous",
@@ -43,6 +56,36 @@
   "noResults": "No Results",
   "error":{
     "title":"Error"
+  },
+  "saleprice":{
+    "title":"Price",
+    "placeholder":"Level of sale's price "
+  },
+  "warehouse":{
+    "title":"Warehouse",
+    "placeholder":"Warehouse"
+  },
+  "shelf":{
+    "title":"Shelf Location",
+    "placeholder":"Product's shelf location"
+  },
+  "posid":{
+     "title":"POS ID",
+    "placeholder":"Select POSID"
   }
+  },
+  "account":{
+    "title":"Account",
+    "description":"Account detail",
+    "posid":"POS ID",
+    "posid_placeholder":"Your POS ID",
+    "taxno":"Tax Number",
+    "taxno_placeholder":"",
+    "address":"Address",
+    "address_placeholder":"",
+    "base_currency":"Base Currency",
+    "target_currency":"Target Currency"
+
   }
+ 
 } 

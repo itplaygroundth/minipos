@@ -2,7 +2,7 @@ import { Button } from "./button";
 import { Card,CardContent,CardDescription,CardFooter,CardHeader,CardTitle } from "./card";
 import { Input } from "./input";
 import { Label } from "./label";
-import {Form, FormField, FormItem, FormMessage} from "./form"
+import {Form, FormField, FormItem, FormMessage,FormLabel} from "./form"
 import {Separator} from "./separator"
 import { Table ,TableFooter,TableBody,TableCell,TableHead,TableHeader, TableRow} from "./table";
 import { DropdownMenu,
@@ -52,7 +52,10 @@ import {
         MenubarSubTrigger,
         MenubarTrigger,
       } from "./menubar"
-export {Button,Card,CardContent,CardDescription,CardFooter,CardHeader,CardTitle,Input,Label,Form, FormField, FormItem, FormMessage, Separator, DropdownMenu,
+
+import { Skeleton } from "./skeleton";
+
+export {Button,Card,CardContent,CardDescription,CardFooter,CardHeader,CardTitle,Input,Label,Form, FormField, FormItem,FormLabel, FormMessage, Separator, DropdownMenu,
     DropdownMenuContent,
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -90,4 +93,4 @@ export {Button,Card,CardContent,CardDescription,CardFooter,CardHeader,CardTitle,
     MenubarSub,
     MenubarSubContent,
     MenubarSubTrigger,
-    MenubarTrigger,}
+    MenubarTrigger,Skeleton}

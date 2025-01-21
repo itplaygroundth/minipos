@@ -1,5 +1,6 @@
 {
  "login":{
+  "posid":"เลขที่เครื่อง",
   "title": "เข้าสู่ระบบ",
   "username": "รหัสผู้ใข้",
   "email": "อีเมล",
@@ -7,40 +8,83 @@
   "invalidEmail": "ที่อยู่อีเมลไม่ถูกต้อง",
   "passwordLength": "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร"
     },
+  "button":{
+    "togglelang":"ภาษา"
+  },
+  "menu":{
+    "overview":"หน้าหลัก",
+    "customers":"ลูกค้า",
+    "products":"สินค้า",
+    "settings":"ตั้งค่า",
+    "logout":"ออกจากระบบ",
+    "profile":"โปรไฟล์",
+    "account":"บัญชี",
+    "appearance":"รูปลักษณ์",
+    "notifications":"แจ้งเตือน",
+    "display":"หน้าจอ"
+  },
+  "transaction":{
+    "columns":{
+      "name":"ชื่อสินค้า",
+      "quantity":"จำนวน",
+      "unit":"หน่วยนับ",
+      "price":"ราคา",
+      "total":"ยอดรวม",
+      "rowNumber":"ลำดับ"
+    },
+    "posid":"เลขที่เครื่อง"
+  },
+  "settings":{
+    "base_currency":"สกุลเงินหลัก",
+    "target_currency":"สกุลเงินยูสเซอร์",
     "button":{
-      "togglelang":"ภาษา"
+      "update":"ปรับปรุง",
+      "save":"บันทึก",
+      "cancel":"ยกเลิก"
     },
-    "menu":{
-      "overview":"หน้าหลัก",
-      "customers":"ลูกค้า",
-      "products":"สินค้า",
-      "settings":"ตั้งค่า",
-      "logout":"ออกจากระบบ",
-      "profile":"โปรไฟล์",
-      "account":"บัญชี",
-      "appearance":"รูปลักษณ์",
-      "notifications":"แจ้งเตือน",
-      "display":"หน้าจอ"
+    "title":"ตั้งค่า",
+    "description":"ตั้งค่ารายละเอียดบิล"
+  },
+  "common":{
+    "previous":"ก่อนหน้า",
+    "next":"ถัดไป",
+    "of": "ของ",
+    "rowSelected":"จากทั้งหมด",
+    "noResults": "ไม่พบข้อมูล",
+    "error":{
+      "title":"มีข้อผิดผลาด!"
     },
-    "transaction":{
-      "columns":{
-        "name":"ชื่อสินค้า",
-        "quantity":"จำนวน",
-        "unit":"หน่วยนับ",
-        "price":"ราคา",
-        "total":"ยอดรวม",
-        "rowNumber":"ลำดับ"
-      }
+    "saleprice":{
+      "title":"ระดับราคาขาย",
+      "placeholder":"กำหนดระดับราคาขายเริ่มต้น"
     },
-    "common":{
-      "previous":"ก่อนหน้า",
-      "next":"ถัดไป",
-      "of": "ของ",
-      "rowSelected":"จากทั้งหมด",
-      "noResults": "ไม่พบข้อมูล",
-      "error":{
-        "title":"มีข้อผิดผลาด!"
-      }
-    }
+    "warehouse":{
+      "title":"คลังสินค้า",
+      "placeholder":"คลังสินค้า"
+    },
+    "shelf":{
+      "title":"ที่เก็บสินค้า",
+      "placeholder":"ที่เก็บสินค้า"
+    },
+    "posid":{
+      "title":"POS ID",
+     "placeholder":"เลือกรหัสเครื่อง"
+   }
+  },
+  "account":{
+    "title":"บัญชี",
+    "description":"ตั้งค่ารายละเอียดบิล",
+    "posid":"รหัสเครื่อง",
+    "posid_placeholder":"กำหนดรหัสประจำเครื่อง ",
+    "taxno":"เลขประจําตัวผู้เสียภาษี",
+    "taxno_placeholder":"กำหนด เลขประจําตัวผู้เสียภาษี ",
+    "address":"ที่อยู่",
+    "address_placeholder":"กำหนดที่อยู่ ",
+    "base_currency":"สกุลเงินหลัก",
+    "target_currency":"สกุลเงินยูสเซอร์"
+
+  }
+  
+ 
 
 }
