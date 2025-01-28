@@ -1,10 +1,11 @@
 
 import { SettingForm } from "./setting-form"
 
-export default function SettingsProfile() {
+export default function SettingsProfile(config:any) {
+ 
   return (
     
-      <SettingForm />
+      <SettingForm config={config.config} />
  
   )
 }

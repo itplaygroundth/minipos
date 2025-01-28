@@ -6,7 +6,9 @@
   "email": "อีเมล",
   "password": "รหัสผ่าน",
   "invalidEmail": "ที่อยู่อีเมลไม่ถูกต้อง",
-  "passwordLength": "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร"
+  "passwordLength": "รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร",
+  "register":"ลงทะเบียน",
+  "success":"เข้าสู่ระบบสำเร๊จ!"
     },
   "button":{
     "togglelang":"ภาษา"
@@ -32,7 +34,9 @@
       "total":"ยอดรวม",
       "rowNumber":"ลำดับ"
     },
-    "posid":"เลขที่เครื่อง"
+    "time":"วันที่",
+    "posid":"เลขที่เครื่อง",
+     "docno":"เลขที่เอกสาร"
   },
   "settings":{
     "base_currency":"สกุลเงินหลัก",
@@ -81,7 +85,11 @@
     "address":"ที่อยู่",
     "address_placeholder":"กำหนดที่อยู่ ",
     "base_currency":"สกุลเงินหลัก",
-    "target_currency":"สกุลเงินยูสเซอร์"
+    "target_currency":"สกุลเงินยูสเซอร์",
+    "customer":"ลูกค้าเริ่มต้น",
+    "customer_placeholder":"เลือกลูกค้าเริ่มต้น",
+    "docformat":"รูปแบบเอกสาร",
+    "docformat_placeholder":"@@=หมายเลขเครื่อง,YY=ปี,MM=เดิอน,DD=วัน,#=ความยาว เช่น #### คือ 4 หลัก"
 
   }
   

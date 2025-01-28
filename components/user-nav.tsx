@@ -55,14 +55,14 @@ import { useEffect, useState } from "react"
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">shadcn</p>
+              <p className="text-sm font-medium leading-none"></p>
               <p className="text-xs leading-none text-muted-foreground">
-                m@example.com
+                JACKY@MonkeyGangs
               </p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuGroup>
+          {/* <DropdownMenuGroup>
             <DropdownMenuItem>
               Profile
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
@@ -77,7 +77,7 @@ import { useEffect, useState } from "react"
             </DropdownMenuItem>
             <DropdownMenuItem>New Team</DropdownMenuItem>
           </DropdownMenuGroup>
-          <DropdownMenuSeparator />
+          <DropdownMenuSeparator /> */}
           <DropdownMenuItem
              onClick={handleLogout}>{t('menu.logout')}  
             <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

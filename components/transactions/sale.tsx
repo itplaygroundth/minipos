@@ -15,6 +15,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  selectRowsFn,
 } from "@tanstack/react-table"
 
 import {
@@ -22,7 +23,10 @@ import {
   rankItem,
   compareItems,
 } from '@tanstack/match-sorter-utils'
- 
+import { useCustomDialog } from '@/components/customdlg';
+import { formatInTimeZone,toDate, format } from 'date-fns-tz'
+
+
 import { Button, Input, Table,TableFooter,TableBody, TableCell, TableHead, TableHeader, TableRow ,  Select,
     SelectContent,
     SelectItem,
@@ -42,7 +46,7 @@ import { Button, Input, Table,TableFooter,TableBody, TableCell, TableHead, Table
 import { useTranslation } from '@/app/i18n/client';
 import { languages } from '@/app/i18n/setting'
 import { usePathname } from 'next/navigation';
-import { formatNumber } from '@/lib/utils'
+import { convP2DC, formatNumber } from '@/lib/utils'
 import { Separator } from '@radix-ui/react-separator';
 import { cn } from '@/lib/utils';
 import { useToast } from "@/hooks/use-toast";
@@ -51,13 +55,16 @@ import { FormControl, FormDescription, FormLabel } from '../ui/form';
 import { string, z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
- 
+import {DeleteIcon,Trash2} from "lucide-react"
 import Cookies from 'js-cookie'; 
-import { GetItemList, GetSettings } from '@/actions';
+import { AddInvoice, DeleteInv, GetDocNo, GetInvoiceNo, GetItemList, GetSettings } from '@/actions';
 import { pages } from 'next/dist/build/templates/app-page';
 import {Items,BCAr} from "@/types"
 import TableList from './tablelist'
 import DebouncedInput from '../debouncedinput'
+import TimeLabel from '../timelabel'
+import { DialogClose } from '../ui/dialog'
+import Autocomplete from '../ui/autocomplete'
 //  interface DataTableProps<TData, TValue> {
 //   columns: ColumnDef<TData, TValue>[]
 //   data: TData[]
@@ -88,26 +95,29 @@ interface SaleProps {
     data: {
         Items: Items[];
         Customers: BCAr[];
+        Setting:string;
+        Docno:string;
+        Invoice:any[];
+        Role:string;
     }
     message: string;
     status: boolean;
 }
-
+const company = process.env.NEXT_PUBLIC_COMPANY
 const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
   //  const [searchTerm, setSearchTerm] = useState('');
     const [searchArTerm, setSearchArTerm] = useState('');
-    
     const [quantity, setQuantity] = useState(1);
+  //  const [invoice,setInvoice] = useState(data.Invoice)
  // เปลี่ยนประเภทของ items เป็น Item[]
     const [items, setItems] = useState<Items[]>([]);
     const [customer, setCustomer] = useState<BCAr>();
-    const [customerId, setCustomerId] = useState('');
+    const [customerId, setCustomerId] = useState(JSON.parse(JSON.parse(data.Setting).data).customer || "");
     const pathname = usePathname()
     const lang = pathname?.split('/')[1] || languages[0]
     const {toast} = useToast()
     const {t} = useTranslation(lang,"common",undefined)
     const [isLoading,setIsLoading] = useState(false)
-    const [rowSelection, setRowSelection] = React.useState({})
     const [columnVisibility, setColumnVisibility] =
       React.useState<VisibilityState>({})
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -115,38 +125,67 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
     )
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [showPanelItem, setShowPanelItem] = useState(false);
+    const [showPanelDoc, setShowPanelDoc] = useState(false);
+ 
     const [showPanelAr, setShowPanelAr] = useState(false);
     const [pageSize, setPageSize] = useState(10); // กำหนดค่าเริ่มต้นเป็น 10 แถวต่อหน้า
     const [currentPage, setCurrentPage] = useState(0); // ตัวแปรสำหรับเก็บหน้าปัจจุบัน
     const [isDialogOpen, setIsDialogOpen] = useState(false); // สถานะสำหรับเปิด/ปิด Dialog
     const [totalamount, setTotalAmount] = useState(0); // สถานะสำหรับยอดเงินที่แสดง
-    const [receivedAmount, setReceivedAmount] = useState(0); // สถานะสำหรับยอดเงินที่รับ
-    const [price,setPrice] = useState("")
-     
-    const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false); // สำหรับ Dialog รับเงิน
+    const [taxamount, setTaxAmount] = useState(0); // สถานะสำหรับยอดเงินที่แสดง
+    const [sumitemamount, setItemAmount] = useState(0); // สถานะสำหรับยอดเงินที่แสดง
+    
+    // const [receivedAmount, setReceivedAmount] = useState(0); // สถานะสำหรับยอดเงินที่รับ
+    //const [rowSelection, setRowSelection] = React.useState({})
+    const [rowSelection, setRowSelection] = useState({});
+    const [price,setPrice] = useState(JSON.parse(JSON.parse(data.Setting).data).price)
+    const [user,setUser] = useState<BCAr>()
+   // const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false); // สำหรับ Dialog รับเงิน
     const [isBillDialogOpen, setIsBillDialogOpen] = useState(false); // สำหรับ Dialog แสดงบิล
+    const [isDelDialogOpen,setIsDellDialogOpen] = useState(false)
     const [changeAmount, setChangeAmount] = useState(0); // สถานะสำหรับยอดเงินทอน
     const [billDetails, setBillDetails] = useState<any>(null); // สถานะสำหรับรายละเอียดบิล
     const [posid,setPosid] = useState("")
     const [globalFilter, setGlobalFilter] = useState('')
+    const [docFilter, setDocFilter] = useState('')
+    const [docno,setDocno] = useState(data.Docno)
+    const [setting,setSetting] = useState(data.Setting)
     const [filteredDataItem,setfilteredDataItem] = useState([])
-  
+    const [filteredDataInv,setfilteredDataInv] = useState([])
+    const [isEdit, setIsEdit] = useState(false)
+    const date = new Date()
     const form = useForm<z.infer<typeof recieveSchema>>({
         resolver: zodResolver(recieveSchema),
         defaultValues:{
             totalamount:0,
             recievemoney:0
         }
-        })
-
+    })
     useEffect(() => {
         // โหลดข้อมูลจาก sessionStorage ถ้ามี
         
         try {
-        
+        //console.log(JSON.parse(JSON.parse(setting).data).docformat)
+        if(posid=="")
+        setPosid(JSON.parse(setting).posId) 
+
+        setUser(data.Customers.filter((item)=>item.code==customerId)[0])
+
         const storedItems = sessionStorage.getItem('items');
+       // console.log(storedItems)
+        const isedit = sessionStorage.getItem("isedit");
+        if (isedit) {
+            setIsEdit(isedit === "true"); // แปลงค่าจาก sessionStorage เป็น boolean
+        }
         if (storedItems) {
-            setItems(JSON.parse(storedItems));
+            const parsedItems = JSON.parse(storedItems);
+       
+            if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+                setItems(parsedItems); // ตั้งค่า items หากมีข้อมูล
+                const total = parsedItems.reduce((total, item) => total + item.total, 0);
+                setItemAmount(total)
+                setTaxAmount(total-(total/convP2DC(JSON.parse(JSON.parse(data.Setting).data).taxrate)))
+            }
         }
         }
         catch{
@@ -163,35 +202,45 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
 
         }
     }, [items]);
+    const [confirm, ConfirmDialogComponent] = useCustomDialog({
+        title: "ลบรายการ?",
+        description: "ต้องการลบรายการนี้ ใช่หรือไม่?",
+        btnok:"ตกลง",
+        btncancel:"ยกเลิก"
 
-
-    useEffect(()=>{
-        const fetchSetting = async ()=>{
-            const id = Cookies?.get('posid') || "POS"
-            setPosid(id)
-            const response = await  GetSettings(id)
-            if(response.Status){
-                setPrice(JSON.parse(response.Data.data).price)
-            
-                const Items = await GetItemList(1,pageSize)
-                data = Items
-            
-            }
+    });
+    const handleOpenButton = async () => {
+        const ok = await confirm();
+        if (ok) {
+            handleDel()
+            clearSession()
+            return;
         }
-
-        fetchSetting()
-
-    },[])
-
-    // ฟังก์ชันสำหรับเคลียร์ sessionStorage
+    }
     const clearSession = () => {
         sessionStorage.removeItem('items');
+       
         setItems([]); // เคลียร์ items ใน state
         form.setValue("totalamount",0)
         form.setValue("recievemoney",0)
-
+        //console.log(setting)
+        //console.log(posid,JSON.parse(JSON.parse(setting).data).docformat)
+        GetInvoiceNo(posid,JSON.parse(JSON.parse(setting).data).docformat).then((response)=>{
+         //   console.log(response)
+            if(response.Status){
+                setDocno(response.Data)
+            }
+            // console.log("###############")
+            // console.log(customer)
+            // console.log(customerId)
+            // console.log("###############")
+        })
+        sessionStorage.setItem("isedit","false")
+        setTaxAmount(0)
+        setItemAmount(0)
+        setTotalAmount(0)
+        setIsEdit(false)
     };
-    
     const handleOpenDialog = () => {
         if (!customerId) {
              // แจ้งเตือนถ้าช่องรหัสลูกค้าเป็นค่าว่าง
@@ -206,49 +255,44 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
             setIsDialogOpen(true); // เปิด Dialog ถ้ามีค่าในช่องรหัสลูกค้า
         }
     };
-    
-
     const modalItemColumns = useMemo(() => [
-        { id: 'rowNumber', header: 'ลำดับ' },
-        { id: 'code', header: 'รหัสสินค้า' },
-        { id: 'name', header: 'ชื่อ' },
-        { id: 'quantity', header: 'จำนวน' },
-        { id: 'unit', header: 'หน่วยนับ' },
-        { id: 'price1', header: 'ราคา1' },
-        { id: 'price2', header: 'ราคา2' },
-        { id: 'price3', header: 'ราคา3' },
+        { id: 'rowNumber', header: 'ลำดับ',visible:true,format:'' },
+        { id: 'code', header: 'รหัสสินค้า',visible:true,format:'' },
+        { id: 'name', header: 'ชื่อ',visible:true,format:'' },
+        { id: 'quantity', header: 'จำนวน',visible:true,format:'' },
+        { id: 'unit', header: 'หน่วยนับ',visible:true,format:'' },
+        { id: 'unitcode', header: 'หน่วยนับ',visible:false,format:'' },
+        { id: 'price1', header: 'ราคา1',visible:true,format:'0.00'  },
+        { id: 'price2', header: 'ราคา2',visible:true,format:'0.00'  },
+        { id: 'price3', header: 'ราคา3',visible:true,format:'0.00'  },
     ], []);
     const modalArColumns = useMemo(() => [
-        { id: 'rowNumber', header: 'ลำดับ' },
-        { id: 'code', header: 'รหัสลูกค้า' },
-        { id: 'name', header: 'ชื่อ' },
-        { id: 'address', header: 'ที่อยู่' },
+        { id: 'rowNumber', header: 'ลำดับ',visible:true,format:'' },
+        { id: 'code', header: 'รหัสลูกค้า',visible:true,format:'' },
+        { id: 'name', header: 'ชื่อ',visible:true,format:'' },
+        { id: 'address', header: 'ที่อยู่',visible:true,format:'' },
         // { id: 'unit', header: 'หน่วยนับ' },
         // { id: 'price1', header: 'ราคา1' },
         // { id: 'price2', header: 'ราคา2' },
         // { id: 'price3', header: 'ราคา3' },
     ], []);
-    // const filteredDataItem = data?.Items.filter(item => 
-    //     (item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    //     item.code.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    //     (/\d/.test(searchTerm) || /^[a-zA-Z\u0E00-\u0E7F]*$/.test(searchTerm))
-    // );
-    // const filteredData = games?.filter((item:Games) => 
-    //     (item?.name?.toLowerCase().includes(searchTerm?.toLowerCase()) || 
-    //     item?.productCode?.toLowerCase().includes(searchTerm?.toLowerCase()) || 
-    //     item?.product?.toLowerCase().includes(searchTerm?.toLowerCase())) &&
-    //     (/\d/.test(searchTerm) || /^[a-zA-Z\u0E00-\u0E7F]*$/.test(searchTerm))
-    //   );
-     
+    const modalInvColumns = useMemo(() => [
+       // { id: 'rowNumber', header: 'ลำดับ',visible:true  },
+        { id: 'docdate', header: 'วันที่' ,visible:true,format:'DD-MM-YYYY' },
+        { id: 'docno', header: 'เลขที่เอกสาร' ,visible:true,format:'' },
+        { id: 'arname', header: 'ชื่อลูกค้า' ,visible:true,format:'' },
+        { id: 'totalamount', header: 'มูลค่า' ,visible:true,format:'0.00' },
+        // { id: 'unit', header: 'หน่วยนับ' },
+        // { id: 'price1', header: 'ราคา1' },
+        // { id: 'price2', header: 'ราคา2' },
+        // { id: 'price3', header: 'ราคา3' },
+    ], []);
     const filteredDataAr = data?.Customers.filter(item => 
         (item?.name?.toLowerCase().includes(searchArTerm?.toLowerCase()) || 
         item?.code?.toLowerCase().includes(searchArTerm?.toLowerCase())) &&
         (/\d/.test(searchArTerm) || /^[a-zA-Z\u0E00-\u0E7F]*$/.test(searchArTerm))
     );
- 
     const columnHelper = createColumnHelper<Items>()
-    //const totalAmount = items.reduce((total, item) => total + item.total, 0); // สมมุติราคาสินค้าเป็น 100
-
     const columns =  [
         columnHelper.accessor('rowNumber', {
             header: t('transaction.columns.rowNumber'),
@@ -297,7 +341,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                       ยอดสินค้ารวม
                     </span>)
               },
-          }),
+        }),
         columnHelper.accessor('total', {
           header: () => <div className="text-right">{t('transaction.columns.total')}</div>,
           cell: info => {
@@ -337,13 +381,11 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         //   },
         // },
       ]
-
-      const [pagination, setPagination] = useState({
+    const [pagination, setPagination] = useState({
         pageIndex: 0, //initial page index
         pageSize: 25, //default page size
       });
-
-      const createTable = (data: any[], columns: any[]) => {
+    const createTable = (data: any[], columns: any[]) => {
         return useReactTable({
             data: data,
             columns: columns,
@@ -356,6 +398,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
             onColumnVisibilityChange: setColumnVisibility,
             onRowSelectionChange: setRowSelection,
             onPaginationChange: setPagination,
+            enableRowSelection: true,
             initialState: {
                 pagination: {
                   pageIndex: 0, //custom initial page index
@@ -379,14 +422,44 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
             },
         });
     };
-
-    // สร้างตัวแปร table โดยส่ง data และ columns
     const table = createTable(items, columns);
- 
-    //   if (isLoading) {
-    //     return <div>Loading {t('transaction.title')}...</div>;
-    //   }
-      const handlePrint = () => {
+    
+    const handleRowClick = (row:any) => {
+        setRowSelection(row)
+    //    // const newSelectedRows = new Set(rowSelection);
+    //     if (rowSelection.has(row.id)) {
+    //         rowSelection.delete(row.id); // ยกเลิกการเลือกหากแถวถูกเลือกอยู่แล้ว
+    //     } else {
+    //         rowSelection.add(row.id); // เพิ่มแถวที่ถูกเลือก
+    //     }
+    //     setSelectedRows(newSelectedRows);
+     };
+    
+     const handleDeleteRow = (rowId:number) => {
+        // ลบแถวออกจากข้อมูล
+        console.log(rowId);
+
+        // Make a copy of the items array
+        const newData = [...items];
+    
+        // Remove the item at the specified index using splice
+        newData.splice(rowId, 1);
+    
+        // Update the state with the new array
+        setItems(newData);
+        // Calculate the new total amount
+        const totalAmount = newData.reduce((sum, item) => sum + item.total, 0);
+        
+        // Update the total amount state
+        setTotalAmount(totalAmount);
+        setTaxAmount(totalAmount-(totalAmount/convP2DC(JSON.parse(JSON.parse(data.Setting).data).taxrate)))
+    // ตั้งค่า totalAmount ใหม่
+        setItemAmount(totalAmount)
+        // Clear the row selection
+        setRowSelection({});
+      
+    };
+    const handlePrint = () => {
         const printContent = document.querySelector('.bill'); // เลือก div ที่ต้องการพิมพ์
         const win = window.open('', '', 'width=800,height=600'); // เปิดหน้าต่างใหม่
 
@@ -463,19 +536,21 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                 <body>
                 
                     <ul>
-                    <li> <h1 >${t('DealPOS')}</h1></li>
-                    <li>${t('Aplikasi Kasir Online untuk bisnis Retail')}</li>
-                    <li>${t('Aplikasi Kasir Online untuk bisnis Retail')}</li>
+                    <li> <h1 >${company}</h1></li>
+                    <li>${customer?.name}</li>
+                    <li>${JSON.parse(data.Setting).location}</li>
                     <li>เลขที่: ${billDetails?.docno}</li>
                     <li>วันที่ ${new Date().toLocaleDateString(lang)}</li>
                     </ul>
+                    <br>
                     ${printContent?.innerHTML} 
                     <ul>  
                         <li>ยอดรวม: ${billDetails?.total} บาท</li>
                         <li>ยอดเงินที่รับ: ${billDetails?.received} บาท</li>
                         <li>ยอดเงินทอน: ${billDetails?.change} บาท</li>
                     </ul>
-                    <p className="text-center mt-4">พิมพ์วันที่: ${new Date().toLocaleDateString(lang)}</p>
+                    <br>
+                    <div className="text-center mt-4">พิมพ์วันที่: ${new Date().toLocaleDateString(lang)}</div>
                 </body>
             </html>
         `);
@@ -486,40 +561,132 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         win?.close(); // ปิดหน้าต่างหลังจากพิมพ์
         setTimeout(() => {
         setIsBillDialogOpen(!isBillDialogOpen)
-        setCustomerId("")
+      //  setCustomerId("")
+        setGlobalFilter("")
         clearSession()
-
+        
         },1000)
     };
-    
+    const handleSelectInv = (item: {docno:string,docdate:string}) => {
+        // console.log(item)
+         setShowPanelDoc(false)
+         sessionStorage.setItem("isedit","true")
+         setIsEdit(true)
+
+         //setCustomer({code:item.arcode,name:item.arname})
+         setDocno(item.docno)
+        
+         GetDocNo(item.docno).then((response)=>{
+           // form.setValue("Docno",item.docno)
+           //response.Data.map((item:any)=>{
+        //setItems(response.Data)
+       // console.log(response) 
+       
+       if(response.Status){
+        setCustomer({code:response.Data.Invoice.arcode,name:response.Data.Invoice.arname,address:"",pricelevel:""})  
+        let items:any = []
+        let total = 0
+        response.Data.Invoicesub.forEach((item:any) => {
+        
+        item.name = item.itemname
+        item.code = item.itemcode
+        item.quantity = item.qty
+        item.total = item.amount
+        ///item.unit = item.unitcode
+        //addItem(item)
+        items = [...items,item]
+        total += item.total
+        })
+        setTotalAmount(total)
+        setItems(items)
+        setTaxAmount(total-(total/convP2DC(JSON.parse(JSON.parse(data.Setting).data).taxrate)))
+        // setTotalAmount(totalAmount); // ตั้งค่า totalAmount ใหม่
+         setItemAmount(total)
+        } else {
+            toast({
+                variant: "destructive",
+                title: t('common.error.title'),
+                description: response.Message,
+            });
+        }
+         })
+        // const totalAmount = items.reduce((sum, item) => sum + item.total, 0);
+         //setTotalAmount(totalAmount); // ตั้งค่า totalAmount ใหม่
+       
+    }
     const handleSelectItem = (item: Items) => {
-       // console.log(item)
+
+   //   addItem(item)
+        //console.log(item)
         // ตรวจสอบว่ามีสินค้านี้อยู่ในรายการหรือไม่
+        
+        
+        
         const existingItemIndex = items.findIndex(existingItem => existingItem.code === item.code);
        // console.log(`${item}.${item[price as keyof Items]}`)
+        const whcode = JSON.parse(JSON.parse(setting).data).whcode
+        const shelfcode = JSON.parse(JSON.parse(setting).data).shelfcode
         const saleprice = parseFloat(item[price as keyof Items].toString())
-        
-        if (existingItemIndex !== -1) {
-            // ถ้ามีอยู่แล้ว ให้ปรับปรุงจำนวนและผลรวม
+      
+        item.whcode = whcode
+        item.shelfcode = shelfcode
+        //console.log(items)
+        //console.log(existingItemIndex)
+        if (existingItemIndex == -1) {
+            item.quantity = quantity
+            item.total = saleprice * quantity 
+            item.price = saleprice
+           // item.unitcode = item.unit
+            items.push(item)
+            setItems([...items])
+        }else {
             const updatedItems = [...items];
             updatedItems[existingItemIndex].quantity += quantity; // เพิ่มจำนวนจากช่องกรอก
             updatedItems[existingItemIndex].total = updatedItems[existingItemIndex].price * updatedItems[existingItemIndex].quantity; // คำนวณผลรวมใหม่
             setItems(updatedItems);
-        } else {
-            item.price = saleprice
-            // ถ้าไม่มี ให้เพิ่มรายการใหม่
-            setItems([...items, { ...item, quantity, total: saleprice * quantity }]);
         }
-        const newTotalAmount = items.reduce((total, item) => total + item.total, 0);
-        setTotalAmount(newTotalAmount); // ตั้งค่า totalAmount ใหม่
-         // ซ่อน Panel
-        setQuantity(1); // รีเซ็ตจำนวน
+       
+        const total = items.reduce((total, item) => total + item.total, 0);
+        setItemAmount(total)
+        setTaxAmount(total-(total/convP2DC(JSON.parse(JSON.parse(data.Setting).data).taxrate)))
+        //console.log(items)
+        setShowPanelItem(false);
+        setQuantity(1);
         
-        //setSearchTerm('');
-       // setGlobalFilter("")
-      //  if(showPanelItem)
-       setShowPanelItem(false);
     };
+    // const addItem = (item: Items) => {
+    //     const existingItemIndex = items.findIndex(existingItem => existingItem.code === item.code);
+       
+    //     let saleprice = 0.0
+    //     if(item[price as keyof Items])
+    //         saleprice = parseFloat(item[price as keyof Items].toString())
+    //     else
+    //         saleprice = item.price
+          
+    //      //console.log(`${item}.${item[price]}`)
+    //      const whcode = JSON.parse(JSON.parse(setting).data).whcode
+    //      const shelfcode = JSON.parse(JSON.parse(setting).data).shelfcode
+    //      //console.log(item[price as keyof Items])
+       
+    //      item.whcode = whcode
+    //      item.shelfcode = shelfcode
+    //      if (existingItemIndex !== -1) {
+    //          // ถ้ามีอยู่แล้ว ให้ปรับปรุงจำนวนและผลรวม
+    //          const updatedItems = [...items];
+    //          updatedItems[existingItemIndex].quantity += quantity; // เพิ่มจำนวนจากช่องกรอก
+    //          updatedItems[existingItemIndex].total = updatedItems[existingItemIndex].price * updatedItems[existingItemIndex].quantity; // คำนวณผลรวมใหม่
+    //          setItems(updatedItems);
+    //      } else {
+    //          // item.price = saleprice
+    //          // ถ้าไม่มี ให้เพิ่มรายการใหม่
+    //         // console.log(items)
+    //          setItems([...items, { ...item, quantity, total: saleprice * quantity }]);
+    //      }
+    //      const newTotalAmount = items.reduce((total, item) => total + item.total, 0);
+    //      setTotalAmount(newTotalAmount); // ตั้งค่า totalAmount ใหม่
+    //       // ซ่อน Panel
+    //      setQuantity(1); // รีเซ็ตจำนวน
+    // }
     const handleSelectAr = (item: BCAr) => {
         // ตรวจสอบว่ามีสินค้านี้อยู่ในรายการหรือไม่
         //const existingArIndex = bCAr.findIndex(existingItem => existingItem.code === item.code);
@@ -540,17 +707,21 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         //setQuantity(1); // รีเซ็ตจำนวน
         setSearchArTerm('');
     };
-    const handleEsc = (event: KeyboardEvent) => { 
-        if (event.key === "Escape") {
-            setShowPanelItem(false);
-            setShowPanelAr(false); // ซ่อน Panel เมื่อกด ESC
-        } 
-    }
-    // ฟังก์ชันสำหรับจัดการการกด ESC
+    // const handleEsc = (event: KeyboardEvent) => { 
+    //     if (event.key === "Escape") {
+    //         setShowPanelItem(false);
+    //         setShowPanelAr(false); // ซ่อน Panel เมื่อกด ESC
+    //     } 
+    // }
     const handleKeyDown = (event: KeyboardEvent) => {
+        //console.log(event.key)
         if (event.key === "Escape") {
+           // if(showPanelItem)
             setShowPanelItem(false);
-            setShowPanelAr(false);  // ซ่อน Panel เมื่อกด ESC
+          //  if(showPanelAr)
+            setShowPanelAr(false); 
+          //  if(showPanelDoc)
+            setShowPanelDoc(false); // ซ่อน Panel เมื่อกด ESC
         } else if (event.key === "Enter") {
             if (filteredDataItem.length === 1) {
                 handleSelectItem(filteredDataItem[0]); 
@@ -559,9 +730,20 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                 handleSelectAr(filteredDataAr[0]); 
                 setSearchArTerm('');
             }
+        } else if(event.key == "F7") {
+            handleOpenDialog()
+        } else if(event.key == "F5") {
+            if(showPanelAr)
+            setShowPanelAr(false)
+            setShowPanelItem(true)
+            document.getElementById('searchTerm-input')?.focus();
+        } else if(event.key == "F4") {
+            if(showPanelItem)
+            setShowPanelItem(false)
+            setShowPanelAr(true)
+            document.getElementById('customerid-input')?.focus();
         }
     };
-
     useEffect(() => {
         // เพิ่ม event listener สำหรับการกดปุ่ม
         window.addEventListener("keydown", handleKeyDown);
@@ -570,44 +752,36 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
             window.removeEventListener("keydown", handleKeyDown);
         };
     }, []);
-   
-    // const paginatedDataItem = useMemo(() => {
-    //     const startIndex = currentPage * pageSize;
-    //     const endIndex = startIndex + pageSize;
-    //     return filteredDataItem?.slice(startIndex, endIndex);
-    // }, [filteredDataItem, currentPage, pageSize]); 
-   
     const paginatedDataAr = useMemo(() => {
         const startIndex = currentPage * pageSize;
         const endIndex = startIndex + pageSize;
         return filteredDataAr?.slice(startIndex, endIndex);
     }, [filteredDataAr, currentPage, pageSize]); 
-   
-   
+    const handlerPrint = () =>{
+//        console.log(JSON.parse(data.Setting))
+        const totalamount = items.reduce((total, item) => total + item.total, 0)    
+        const today = formatInTimeZone(date, 'Asia/Bangkok', 'yyyy-MM-dd')
+        const recievemoney = totalamount
+        const change = recievemoney - totalamount;
+        setBillDetails({
+            docno:docno, // เปลี่ยนเป็นเลขที่เอกสารจริง
+            docdate: today,
+            arcode: customerId, // ใช้รหัสลูกค้า
+            items: items, // ใช้รายการสินค้าที่ถูกเลือก
+            total: formatNumber(totalamount,2), // ยอดรวม
+           // netdebtamount: formatNumber(totalamount,2), 
+            received: formatNumber(recievemoney,2), // ยอดเงินที่รับ
+            change: formatNumber(change,2) // ยอดเงินทอน
+        });
+        setIsBillDialogOpen(true);
+    }
+    const handleSave:SubmitHandler<z.infer<typeof recieveSchema>> =  async (bdata:z.infer<typeof recieveSchema>) => {
+        bdata.totalamount = items.reduce((total, item) => total + item.total, 0)    
+        const today = formatInTimeZone(date, 'Asia/Bangkok', 'yyyy-MM-dd')
 
-    // const handleReceivedAmountEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    //     if (event.key === "Enter") {
-    //         //const totalAmount = items.reduce((total, item) => total + item.total, 0);
-    //         const change = receivedAmount - totalamount; // คำนวณยอดเงินทอน
-    //         setChangeAmount(change); // ตั้งค่ายอดเงินทอน
-    //         setTimeout(() => {
-    //             toast({
-    //                 variant: "default",
-    //                 title: t('common.error.title'),
-    //                 description: `${totalamount}-${receivedAmount}=${change}`,
-    //               });
-    //            // clearSession(); // เคลียร์ session หลังจาก 3 วินาที
-    //            setIsDialogOpen(false)
-    //         }, 2000);
-    //         // แสดง Dialog หรือทำการอื่น ๆ ที่ต้องการ
-    //     }
-    // };
-
-    const handleSave:SubmitHandler<z.infer<typeof recieveSchema>> =  async (data:z.infer<typeof recieveSchema>) => {
-        data.totalamount = items.reduce((total, item) => total + item.total, 0)    
         try {
-            if(data.recievemoney && data.recievemoney>0){
-                if(data.recievemoney < data.totalamount) {
+            if(bdata.recievemoney && bdata.recievemoney>0){
+                if(bdata.recievemoney < bdata.totalamount) {
                     
                         toast({
                             variant: "destructive",
@@ -618,18 +792,68 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                     return
                 }
            
-            const change = data.recievemoney - data.totalamount; // คำนวณยอดเงินทอน
-            setChangeAmount(change); // ตั้งค่ายอดเงินทอน
+            const change = bdata.recievemoney - bdata.totalamount; // คำนวณยอดเงินทอน
+           // ตั้งค่ายอดเงินทอน
+            const  percent = parseFloat(JSON.parse(JSON.parse(setting).data).taxrate.replace("%",""))
+            const percentage = ((100+percent)/100)
+            const BeforeTaxamount = (bdata.totalamount / percentage).toFixed(2);
+            const TaxAmount = (bdata.totalamount - (bdata.totalamount / percentage)).toFixed(2);
+            
+            setChangeAmount(change); 
+            //const user = data.Customers.filter((item)=>item.code==customerId)[0]
+            
+            const bill_detail  = {
+                invoice:{
+                    docno: docno,
+                    taxno:docno, // เปลี่ยนเป็นเลขที่เอกสารจริง
+                    docdate: toDate(today),
+                    arcode: user?.code,
+                    arname: user?.name, // ใช้รหัสลูกค้า
+                //   items: items, // ใช้รายการสินค้าที่ถูกเลือก
+                    SumofItemAmount: bdata.totalamount, 
+                    AfterDiscount: bdata.totalamount, 
+                    BeforeTaxamount: parseFloat(BeforeTaxamount), 
+                    TaxAmount:parseFloat(TaxAmount),
+                    totalamount: bdata.totalamount, // ยอดรวม
+                    HomeAmount: bdata.totalamount,
+                    billbalance: bdata.totalamount,
+                    netdebtamount: bdata.totalamount, 
+                    SumcashAmount: bdata.recievemoney, // ยอดเงินที่รับ
+                    sumchangeamount: change,
+                    PayBillStatus:0,
+                    ExchangeRate:1,
+                    IsCancel:0,
+                    IsCompleteSave:1,
+                    posstatus:0,
+                    BillType:0,
+                    TaxType:1,
+                    TaxRate:parseFloat(JSON.parse(JSON.parse(setting).data).taxrate.replace("%","")),
+                    GLFormat:"B2"
+                    },
+                invoicesub:items
+            }
+           // console.log(bill_detail)
+            //const sumchangechange = bdata.recievemoney-bdata.totalamount
             setBillDetails({
-                docno: "12345", // เปลี่ยนเป็นเลขที่เอกสารจริง
-                customer: customerId, // ใช้รหัสลูกค้า
+                docno:docno, // เปลี่ยนเป็นเลขที่เอกสารจริง
+                docdate: today,
+                arcode: customerId, // ใช้รหัสลูกค้า
                 items: items, // ใช้รายการสินค้าที่ถูกเลือก
-                total: formatNumber(data.totalamount,2), // ยอดรวม
-                received: formatNumber(data.recievemoney,2), // ยอดเงินที่รับ
-                change: formatNumber(change,2) // ยอดเงินทอน
+                total:formatNumber(bdata.totalamount,2), // ยอดรวม
+                // netdebtamount: formatNumber(totalamount,2), 
+                received: formatNumber(bdata.recievemoney,2), // ยอดเงินที่รับ
+                change: formatNumber(change,2), // ยอดเงินทอน
+                totalamount: formatNumber(bdata.totalamount,2), // ยอดรวม
+                netdebtamount: formatNumber(bdata.totalamount,2), 
+                sumcashamount: formatNumber(bdata.recievemoney,2), // ยอดเงินที่รับ
+                sumchangeamount: formatNumber(change,2) // ยอดเงินทอน
             });
-      
+          //  console.log(JSON.parse(JSON.parse(setting).data).taxrate)
+            const invoice = await AddInvoice(bill_detail)
+          //  console.log(invoice)
+           if(invoice.Status){
 
+          
             // ตั้งค่ารายละเอียดบิล
           
     
@@ -645,7 +869,16 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
             // clearSession(); // เคลียร์ session หลังจาก 3 วินาที
             setIsDialogOpen(false)
             setIsBillDialogOpen(true);
+           
             }, 1000);
+        } else {
+            toast({
+                variant: "destructive",
+                title: t('common.error.title'),
+                description: invoice.Message,
+            });
+        }
+
         }  else {
             toast({
                         variant: "destructive",
@@ -660,6 +893,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                     }
         }
         } catch (error) {
+            //console.log(error)
             if (error instanceof z.ZodError) {
                 // แสดงข้อผิดพลาดที่เกิดจาก Zod
                 error.errors.forEach((err) => {
@@ -687,7 +921,34 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         // }
        
     };
+    const handleDel = () =>{
+      //  console.log("915",docno)
+         DeleteInv(docno).then((response)=>{
+    //        console.log(response)
+            if(response.Status){
+                toast({
+                    variant: "default",
+                    title: t('common.success.title'),
+                    description: response.Message,
+                    });
+                setIsDellDialogOpen(false)
+            } else {
+                toast({
+                variant: "destructive" ,
+                title: t('common.error.title'),
+                description: response.Message,
+                });
+            }
 
+
+         }).catch((err)=>{
+            toast({
+                variant: "destructive" ,
+                title: t('common.error.title'),
+                description: err,
+                });
+         })
+    }
     return isLoading?( 
         <div className="flex items-center space-x-4">
             <Skeleton className="h-12 w-12 rounded-full" />
@@ -700,9 +961,16 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
             <div className="flex justify-start gap-4 max-w-desktop overflow-auto ">
                 <div className="bg-muted/50 w-full sm:w-[300px] shadow  backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
                     <div className="flex flex-1 flex-col gap-4 p-4">
-                    
-                    <Label className='p-2'>{`${t('transaction.posid')} : ${posid}`}</Label>
-                        <Label className='p-2'>{"X จำนวนที่ต้องการขาย"}</Label>
+                        <div className="flex items-center space-x-4 text-sm">
+                            <div> <Label className={cn("text-sm font-bold")}>{`Role:  `}</Label><Label className={cn("text-sm font-bold",!isEdit?"text-green-600":"text-green-600")}>{`${data.Role.toString().toUpperCase()}`}</Label></div>
+                            <Separator orientation="vertical" />
+                            <div> <Label className={cn("text-sm font-bold")}>{`Mode:  `}</Label><Label className={cn("text-sm font-bold",!isEdit?"text-green-600":"text-green-600")}>{`${isEdit?"Edit":"Insert"}`}</Label></div>
+                        </div>
+                        <TimeLabel lang={lang} />
+                        <Label className='bg-gray-300  h-[20px] text-center' style={{ lineHeight: '20px' }}>{`${t('transaction.posid')} : ${JSON.parse(setting).posId}`}</Label>
+                        <Label className='bg-gray-300 h-[20px] text-center' style={{ lineHeight: '20px' }}>{`${t('transaction.docno')} : ${docno}`}</Label>
+                        <Separator orientation='horizontal' />
+                        <Label className='pl-2'>{"X จำนวนที่ต้องการขาย"}</Label>
                         <Input 
                             id="quantity-input"
                             type="text" 
@@ -718,29 +986,31 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                                 }
                             }}
                         />
-                         <Label className='p-2'>{"เลือกรายการสินค้า"}</Label>
+                         <Label className='pl-2'>{"[F5] เลือกรายการสินค้า"}</Label>
                          <DebouncedInput
                           id="searchTerm-input"
                           placeholder="ค้นหารายการสินค้า" 
                           value={globalFilter ?? ''}
                           onChange={value => {
-                          
+                            if(String(value)==='')
+                                return
                             setGlobalFilter(String(value))
                             //setSearchTerm(String(value)); // อัปเดตสถานะการค้นหา
+                           
                             setShowPanelItem(true); // แสดง Panel เมื่อมีการพิมพ์
                             
                             if(showPanelAr)
                                 setShowPanelAr(false);   
                             
                         }}
-                          className="p-2 font-lg shadow border border-block max-w-sm"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && filteredDataItem.length === 1) {
-                                handleSelectItem(filteredDataItem[0]); // เลือกรายการเดียวที่แสดง
-                                //document.getElementById('quantity-input')?.focus(); // โฟกัสที่ช่อง quantity
-                                setShowPanelItem(false)
-                            }
-                        }}
+                          className="pl-2 font-lg shadow border border-block max-w-sm"
+                        //   onKeyDown={(e) => {
+                        //     if (e.key === "Enter" && filteredDataItem.length === 1) {
+                        //         handleSelectItem(filteredDataItem[0]); // เลือกรายการเดียวที่แสดง
+                        //         //document.getElementById('quantity-input')?.focus(); // โฟกัสที่ช่อง quantity
+                        //         setShowPanelItem(false)
+                        //     }
+                        // }}
                          />
                         {/* <Input 
                             id="searchTerm-input"
@@ -760,9 +1030,17 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                             }}
                         /> */}
                         {/* <Button onClick={addItem}>เพิ่มรายการ</Button> */}
-                        <Separator />
-                        <Label className='p-2'>{"รหัสลูกค้า: "}<span className='text-green-600'>{`${customer?customer.name:"ยังไม่กำหนดรหัสลูกค้า"}`}</span> </Label>
-                        <Input 
+                      
+                        <Label className='pl-2'>{"[F4] รหัสลูกค้า "}
+                            {/* <span className='text-green-600'>{`${user?`${user?.name}`:"ยังไม่กำหนดรหัสลูกค้า"}`}</span> */}
+                         </Label>
+                        <Autocomplete
+                                value={customerId}
+                                onChange={setCustomerId}
+                                allSuggestions={filteredDataAr.map((item) => ({ name: item.name, code: item.code }))}
+                               classname="w-[270px]"
+                            />
+                        {/* <Input 
                             id="customerid-input"
                             placeholder="รหัสลูกค้าหรือสมาชิก" 
                             value={searchArTerm} 
@@ -781,20 +1059,51 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                                     document.getElementById('searchTerm-input')?.focus();
                                 }
                             }}
-                        />
-                        <Button onClick={handleOpenDialog}>กดรับเงิน</Button>
+                        /> */}
+                        <Separator orientation='horizontal' />
+                        <div className='flex flex-col gap-3 border border-1 mt-2'>
+                          
+                        <Button className="text-white hover:bg-gray-400" disabled={isEdit} onClick={handleOpenDialog}>[F7] กดรับเงิน</Button>
+                        <Button  className="bg-blue-300 text-black-400 hover:bg-blue-400"   onClick={()=>handlerPrint()}>[F11] พิมพ์บิล</Button>
+                        <Button className='bg-red-400 text-green-800 hover:bg-red-500'  onClick={clearSession}>ยกเลิก</Button>
                     
-                    
+                        </div>
                     </div>
                 </div>
+                
                 <div className="flex-1 bg-muted/50 w-full shadow backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:shadow-secondary">
                     <div className="min-h-[100vh] flex-1 w-full rounded-xl bg-muted/50 md:min-h-min p-5 overflow-auto">
+                        {/* <div className={cn("mb-2",data.Role.toString()!="USER"?'':'hidden')}>
+                            <Button className='p-2 mx-2 w-[80px] text-white bg-blue-400 hover:bg-blue-500'
+                                onClick={() => setShowPanelDoc(true)}
+                            >{"บัญชี"}</Button>
+                              <Button className='p-2 w-[80px] text-white bg-orange-400 hover:bg-orange-500'
+                                onClick={() => setShowPanelDoc(true)}
+                            >{"ภาษี"}</Button>
+                        </div> */}
                         <div className="rounded-md border bg-background/95 ">
-                            <Table className="table-striped">
+                        <div className='flex'>
+                            
+                              <Button className='p-2 m-2 w-[100px]'
+                                onClick={() => setShowPanelDoc(true)}
+                            >{"ค้นหาบิลขาย"}</Button>
+                            <div  className={cn('flex ml-auto', docno && isEdit?'':'hidden')}>
+                                <Button className='p-2 m-2 w-[100px] text-white bg-green-400 hover:bg-green-600'
+                                    onClick={() => setShowPanelDoc(true)}
+                                    disabled={data.Role.toString().toUpperCase()=="USER"}
+                                >{"บันทึก"}</Button>
+                                <Button className='p-2 m-2 w-[100px] text-white bg-red-400 hover:bg-red-600'
+                                    onClick={handleOpenButton}
+                                    disabled={data.Role.toString().toUpperCase()=="USER"}
+                                >{"ลบ"}</Button>
+                            </div>
+                        </div>
+                            <Table>
                                 <TableHeader>
                                     {table.getHeaderGroups().map((headerGroup: any) => (
                                         <TableRow key={headerGroup.id}>
                                             {headerGroup.headers.map((header: any) => (
+                                                
                                                 <TableHead key={header.id}>
                                                     {header.isPlaceholder
                                                         ? null
@@ -812,8 +1121,12 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                                     table.getRowModel().rows.map((row:any) => (
                                         <TableRow
                                         key={row.id}
-                                        data-state={row.getIsSelected() && "selected"}
+                                        data-state={row.getIsSelected() ? "selected" : ""}
+                                        onClick={()=>handleRowClick(row)}
+                                        className={cn("table-row",table.getState().rowSelection.id==row.id?"text-blue-500 font-bold":"transparent")}
+                                       
                                         >
+                                            
                                         {row.getVisibleCells().map((cell:any) => (
                                             <TableCell key={cell.id}>
                                             {flexRender(
@@ -822,13 +1135,28 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                                             )}
                                             </TableCell>
                                         ))}
+                                        <TableCell className='w-[2px]'>
+                                            {table.getState().rowSelection?.id ===row.id && (
+                                                <Button
+                                                    className="bg-red-400 text-white"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation(); // หยุดการ bubbling ของ event
+                                                        handleDeleteRow(row.id);
+                                                    }}
+                                                   variant="outline" size="icon"
+                                                   disabled={isEdit && data.Role.toString().toUpperCase()=="USER"}
+                                                >
+                                                <Trash2 />
+                                                </Button>
+                                            )}
+                                        </TableCell>
                                         </TableRow>
                                     ))
                                     ) : (
                                     <TableRow>
                                         <TableCell
                                         colSpan={columns.length}
-                                        className="h-24 text-center"
+                                        className={cn("h-24 text-center")}
                                         >
                                         {t('common.noResults')}
                                         </TableCell>
@@ -851,22 +1179,22 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                                     ))}
                                     </TableRow>
                                     ))}
-                                     {/* <TableRow>
+                                     <TableRow>
                                     <TableCell colSpan={columns.length-1} className="text-right">
-                                            ยอดสินค้ารวม:   
+                                            ภาษีมูลค่าเพิ่ม:   {JSON.parse(JSON.parse(data.Setting).data).taxrate}
                                     </TableCell>
                                     <TableCell colSpan={columns.length} className="text-right">
-                                    {formatNumber(parseFloat(totalAmount?.toString()), 2)}
-                                        </TableCell>
+                                    {formatNumber(taxamount || 0, 2)}
+                                    </TableCell>
                                     </TableRow>
                                     <TableRow>
                                     <TableCell colSpan={columns.length-1} className="text-right">
-                                            ยอดรวม:   
+                                            ยอดรวมภาษี:   
                                     </TableCell>
                                     <TableCell colSpan={columns.length} className="text-right">
-                                    {formatNumber(parseFloat(totalAmount?.toString()), 2)}
-                                        </TableCell>
-                                    </TableRow> */}
+                                    {formatNumber(sumitemamount || 0, 2)}
+                                    </TableCell>
+                                    </TableRow>
                                     {/* <TableRow>
                                         <TableCell colSpan={columns.length} className="text-right">
                                             <h3>ใบเสร็จ</h3>
@@ -881,49 +1209,44 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                                 </TableFooter>
                             </Table>
                         </div>
-                        {/* <div className="flex items-center justify-end space-x-2 py-4">
-                            <div className="flex-1 text-sm text-muted-foreground">
-                            {table.getFilteredSelectedRowModel().rows.length} {t('common.of')}{" "}
-                            {table.getFilteredRowModel().rows.length} {t('common.rowSelected')}.
-                            </div>
-                            <div className="space-x-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => table.previousPage()}
-                                disabled={!table.getCanPreviousPage()}
-                            >
-                                {t('common.previous')}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => table.nextPage()}
-                                disabled={!table.getCanNextPage()}
-                            >
-                                {t('common.next')}
-                            </Button>
-                            </div>
+                        {/* <div>
+                            <label>Row Selection State:</label>
+                            <pre>{JSON.stringify(table.getState().rowSelection, null, 2)}</pre>
                         </div> */}
                     </div>
-                 
-                     
                 </div>
-                
             </div>
 
             {/* Panel สำหรับแสดงตาราง */}
            
             {showPanelItem?( <TableList 
+             classname={"top-50 left-0 right-0 z-50 "}
              lang={lang}
+             title="ค้นหา และ เลือกสินค้า"
              items={data.Items}
              setShowPanelItem={setShowPanelItem}
              modalItemColumns={modalItemColumns} 
-             handleSelectItem={handleSelectItem}
+             handleSelect={handleSelectItem}
              globalFilter={globalFilter}
              setGlobalFilter={setGlobalFilter}
              setfilteredDataItem={setfilteredDataItem}
+             isShowInput={true}
              />):<></>}
+
+            {showPanelDoc?( <TableList 
+             classname={"top-50 left-0 right-0 z-50 "}
+             lang={lang}
+             title="ค้นหา และ เลือกบิลขาย"
+             items={data.Invoice}
+             setShowPanelItem={setShowPanelDoc}
+             modalItemColumns={modalInvColumns} 
+             handleSelect={handleSelectInv}
+             globalFilter={docFilter}
+             setGlobalFilter={setDocFilter}
+             setfilteredDataItem={setfilteredDataInv}
+             isShowInput={false}
+             />):<></>}
+
             {showPanelAr && (
                 <div className="fixed top-30 left-0 right-0 z-50 bg-white shadow-lg p-4" style={{ width: 'calc(100% - 300px)', left: '300px', maxHeight: '80vh', overflowY: 'auto' }}>
                     <div className="flex justify-between items-center">
@@ -1005,14 +1328,15 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                     </div>
                 </div>
             )}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSave)}>
             <DialogContent aria-describedby=''>
                 <DialogTitle>ฟอร์มการรับเงิน</DialogTitle>
                 <DialogDescription>
-                <p>ยอดสินค้ารวม: {formatNumber(items.reduce((total, item) => total + item.total, 0), 2)}</p>
-                </DialogDescription>
+                {`ยอดสินค้ารวม: ${formatNumber(items.reduce((total, item) => total + item.total, 0), 2)}`} 
+                </DialogDescription> 
                     <FormField
                         control={form.control} // กำหนด control ที่เหมาะสม
                         name="recievemoney"
@@ -1044,7 +1368,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                             </FormItem>
                         )}
                     />
-                    {/* <p>เงินทอน: {formatNumber(items.reduce((total, item) => total + item.total, 0) - receivedAmount, 2)}</p> */}
+                    {/* <div>เงินทอน: {formatNumber(items.reduce((total, item) => total + item.total, 0) - receivedAmount, 2)}</div> */}
             
             </DialogContent>
       
@@ -1054,13 +1378,13 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         <Dialog open={isBillDialogOpen} onOpenChange={setIsBillDialogOpen}>
             <DialogContent >
                 <DialogTitle className="print-dialog"></DialogTitle>
-                <DialogDescription>{""}</DialogDescription>
+                <DialogDescription></DialogDescription>
                 <div className=' flex flex-col p-4 border border-gray-300 rounded-lg shadow-md'>
-                    <h1 className="text-xl font-bold text-center">{t('DealPOS')}</h1>
-                    <p className="text-center">{t('Aplikasi Kasir Online untuk bisnis Retail')}</p>
-                    <p className="text-center">{t('Aplikasi Kasir Online untuk bisnis Retail')}</p>
-                    <p className="text-center">เลขที่: {billDetails?.docno}</p>
-                    <p className="text-center">วันที่ {new Date().toLocaleDateString(lang)}</p>
+                    <h1 className="text-xl font-bold text-center">{company}</h1>
+                    <div className="text-center">{customer?.name}</div>
+                    <div className="text-center">{JSON.parse(data.Setting).location}</div>
+                    <div className="text-center">เลขที่: {billDetails?.docno}</div>
+                    <div className="text-center">วันที่ {new Date().toLocaleDateString(lang)}</div>
                     
                     <h3 className="mt-4">รายการสินค้า:</h3>
                     <div className="bill">
@@ -1084,19 +1408,19 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                     </Table>
                      </div>
                     <div className="flex flex-col justify-between mt-4">  
-                        <div><p>ยอดรวม: {billDetails?.total} บาท</p></div>
-                        <div><p>ยอดเงินที่รับ: {billDetails?.received} บาท</p></div>
-                        <div><p>ยอดเงินทอน: {billDetails?.change} บาท</p></div>
+                        <div><div>ยอดรวม: {billDetails?.total} บาท</div></div>
+                        <div><div>ยอดเงินที่รับ: {billDetails?.received} บาท</div></div>
+                        <div><div>ยอดเงินทอน: {billDetails?.change} บาท</div></div>
                     </div>
                     
-                    {/* <p className="mt-4 text-center">Terms & Conditions</p>
+                    {/* <div className="mt-4 text-center">Terms & Conditions</div>
                     <ol className="list-decimal ml-4">
                         <li>Items purchased cannot be exchanged or returned.</li>
                         <li>Double-check the change you received.</li>
                         <li>Don't forget to come back.</li>
                     </ol> */}
                     
-                    <p className="text-center mt-4">พิมพ์วันที่: {new Date().toLocaleDateString(lang)}</p>
+                    <div className="text-center mt-4">พิมพ์วันที่: {new Date().toLocaleDateString(lang)}</div>
                     <Button className="print-button" onClick={handlePrint}>พิมพ์บิล</Button>
                
                 </div>
@@ -1104,6 +1428,9 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
           
              
         </Dialog>
+           
+        
+        <ConfirmDialogComponent />
         </div>
     );
 };

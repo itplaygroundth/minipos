@@ -67,11 +67,12 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>
 // This can come from your database or API.
 
 
-export function SettingForm() {
+export function SettingForm(config:any) {
  
   const pathname = usePathname()
   const lang = pathname?.split('/')[1] || languages[0]
   const {t} = useTranslation(lang,"common",undefined)
+  const {posId,location,data} = config.config
   const [unitcode,setUnitcode]= useState([])
   const [whcode,setWhcode]= useState([])
   const [shelfcode,setShelfcode]= useState([])
@@ -106,23 +107,31 @@ export function SettingForm() {
       if(shelfdata.Status){
         setShelfcode(shelfdata.Data)
       }
-   
-      if(posid) {
-       const response = await  GetSettings(posid)
-         
-       if(response.Status){
+        //console.log(config)
+        setSetting(config.config)
+         const {data} = config.config
         
-        setSetting(response.Data)
-        const {data} = response.Data
-        const obj = JSON.parse(data)
-      
-        form.setValue("price",obj?.saleprice.toString())
-        form.setValue("whcode",obj?.whcode.toString())
-        form.setValue("shelfcode",obj?.shelfcode.toString())
-       }
+         const obj = JSON.parse(data)
+        //console.log(obj)
+         form.setValue("price",obj?.price.toString())
+         form.setValue("whcode",obj?.whcode.toString())
+         form.setValue("shelfcode",obj?.shelfcode.toString())
+      // if(posid) {
+      //  const response = await  GetSettings(posid)
+         
+      //  if(response.Status){
+        
+      //   setSetting(response.Data)
+      //   const {data} = response.Data
+      //   const obj = JSON.parse(data)
+      //   //console.log(obj)
+      //    form.setValue("price",obj?.price.toString())
+      //    form.setValue("whcode",obj?.whcode.toString())
+      //    form.setValue("shelfcode",obj?.shelfcode.toString())
+      //  }
        
     
-        }
+      //   }
        } catch (error) {
         console.error("Error fetching agent settigs:", error)
          
@@ -141,32 +150,34 @@ export function SettingForm() {
  
 
 
-  function onSubmit(data: ProfileFormValues) {
+  function onSubmit(accdata: ProfileFormValues) {
 
     const update = async () => {
  
-     toast({
-           title: "You submitted the following values:",
-           description: (
-             <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-               <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-             </pre>
-           ),
-         })
+    //  toast({
+    //        title: "You submitted the following values:",
+    //        description: (
+    //          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+    //            <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+    //          </pre>
+    //        ),
+    //      })
       
-      const posid = Cookies.get('posid')
+     // const posid = Cookies.get('posid')
     //  if(setting){
-      const newsetting = Object.assign({}, setting || {}, data)
+      const newsetting = Object.assign({}, setting || {}, accdata)
       
-      
+    //  console.log(setting)
       //}
       const udata = {
-          "posId":posid,
+          "posId":posId,
           "status":"active",
           "location": setting?.location,
            "data": JSON.stringify({
             "taxno": setting ? JSON.parse(setting.data).taxno : "",
             "taxrate":"7%",
+            "customer":setting? JSON.parse(setting.data).customer: "",
+            "docformat":setting ? JSON.parse(setting.data).docformat:"",
             "baseCurrency": setting ? JSON.parse(setting.data).baseCurrency : "",
             "targetCurrency": setting ? JSON.parse(setting.data).targetCurrency : "",
             "price":newsetting.price,
@@ -174,15 +185,15 @@ export function SettingForm() {
             "shelfcode":newsetting.shelfcode
            })
         }
-         
-        //  toast({
-        //   title: "You submitted the following values:",
-        //   description: (
-        //     <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-        //       <code className="text-white">{JSON.stringify(udata, null, 2)}</code>
-        //     </pre>
-        //   ),
-        // })
+        
+         toast({
+          title: "You submitted the following values:",
+          description: (
+            <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+              <code className="text-white">{JSON.stringify(udata, null, 2)}</code>
+            </pre>
+          ),
+        })
 
         const response = await UpdateSettings(udata)
       // //    {

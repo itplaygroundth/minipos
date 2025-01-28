@@ -1,13 +1,13 @@
- 'use server'
- import { getSession } from "@/lib/session";
+'use server'
+import { getSession } from "@/lib/session";
 import { Authen } from "@/types";
 import { redirect } from 'next/navigation'
-  const port = ":4002"
-  const localendpoint = "http://192.168.1.186:3000/"
+const port = ":4002"
+const localendpoint = "http://192.168.1.186:3000/"
 
 
     
-  export const Login = async (body:Authen) =>{
+export const Login = async (body:Authen) =>{
         
     const session = await getSession();
     //const plainSession = JSON.parse(JSON.stringify(session));
@@ -33,17 +33,23 @@ import { redirect } from 'next/navigation'
           session.username = Username;
           session.userId = ID
           session.role = Role;
+          session.posid = body.posid
           session.prefix = Prefix
           session.customerCurrency= Currency
           session.lng = "en"
+
+          const config = await GetConfig(result.Token,body.posid)
+        
+          if(config.Status){
+           
+          session.config =  JSON.stringify(config.Data)
+          }
           await session.save();
         }
         return result
         //return response.json()
-  }
-
-
-  export const Signin = async (body:Authen) =>{
+}
+export const Signin = async (body:Authen) =>{
         
     const session = await getSession();
     //const plainSession = JSON.parse(JSON.stringify(session));
@@ -64,6 +70,10 @@ import { redirect } from 'next/navigation'
 
         if(result.Status){
          
+         // const setting = await GetSettings(body.posid)
+
+
+
           session.isLoggedIn = true;
           session.token = result.Token;
           session.username = Username;
@@ -75,9 +85,8 @@ import { redirect } from 'next/navigation'
         }
         return result
         //return response.json()
-  }
-
- export async function  GetAPList(){
+}
+export async function  GetAPList(){
  
     const session = await getSession();
     //const plainSession = JSON.parse(JSON.stringify(session));
@@ -96,8 +105,104 @@ import { redirect } from 'next/navigation'
          
          
        
- }
- export async function  GetItemList(offset:number,pagesize:number){
+}
+export async function  GetInvoiceList(offset:number,pagesize:number,docno:string){
+ 
+  const session = await getSession();
+  //const plainSession = JSON.parse(JSON.stringify(session));
+
+  // const state = useAuthStore()
+
+  const response = await fetch(`${localendpoint}api/v1/invoice/list?offset=${offset}&pagesize=${pagesize}`, { method: 'POST',
+        headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' +  session.token
+        },
+       body: JSON.stringify({"docno":docno})
+      })
+      return response.json();
+}
+export async function  GetInvoiceNo(posid:string,docformat:string){
+ 
+  const session = await getSession();
+  //const plainSession = JSON.parse(JSON.stringify(session));
+
+  // const state = useAuthStore()
+
+  const response = await fetch(`${localendpoint}api/v1/invoice/docno`, { method: 'POST',
+        headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' +  session.token
+        },
+        body: JSON.stringify({"posid":posid,"docformat":docformat})
+      })
+      return response.json();
+       
+       
+     
+}
+export async function  GetDocNo(docno:string){
+ 
+  const session = await getSession();
+  //const plainSession = JSON.parse(JSON.stringify(session));
+
+  // const state = useAuthStore()
+
+  const response = await fetch(`${localendpoint}api/v1/invoice/bydocno`, { method: 'POST',
+        headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' +  session.token
+        },
+        body: JSON.stringify({"docno":docno})
+      })
+      return response.json();
+       
+       
+     
+}
+export async function DeleteInv(docno:string){
+  
+  //console.log(body)
+  const session = await getSession();
+  //const plainSession = JSON.parse(JSON.stringify(session));
+
+  // const state = useAuthStore()
+
+  const response = await fetch(`${localendpoint}api/v1/invoice/docno`, { method: 'DELETE',
+        headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' +  session.token
+        },
+        body: JSON.stringify({"docno":docno})
+      })
+      return response.json();
+       
+}
+export async function  AddInvoice(data:any){
+ 
+  const session = await getSession();
+  //const plainSession = JSON.parse(JSON.stringify(session));
+
+  // const state = useAuthStore()
+
+  const response = await fetch(`${localendpoint}api/v1/invoice/add`, { method: 'POST',
+        headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' +  session.token
+        },
+        body: JSON.stringify(data)
+      })
+      return response.json();
+       
+       
+     
+}
+export async function  GetItemList(offset:number,pagesize:number){
  
   const session = await getSession();
   //const plainSession = JSON.parse(JSON.stringify(session));
@@ -142,7 +247,30 @@ import { redirect } from 'next/navigation'
        
      
 }
-  export async function Logout(lang:string) {
+export async function SignOutTh() {
+  const session = await getSession();
+  
+   
+    // const response = await fetch(`${localendpoint}api/v1/authen/logout`, { method: 'POST',
+    //   headers: {
+    //     'Accept': 'application/json',
+    //     'Content-Type': 'application/json',
+    //     'Authorization': 'Bearer ' +  session.token
+    //   },
+    //   // body: JSON.stringify({"username":body.username,password:body.password,prefix:body.prefix})
+    // });
+    // const result = await response.json()
+    // if(result.Status) {
+    session.destroy();
+    if (!session.isLoggedIn) {
+        redirect(`/th/login`);
+      }
+  //  }
+    //return response.json();
+
+ 
+}
+export async function Logout(lang:string) {
     const session = await getSession();
     
      
@@ -164,9 +292,8 @@ import { redirect } from 'next/navigation'
       //return response.json();
  
    
-  }
-
-  export const GetExchangeRate = async (currency:string) =>{
+}
+export const GetExchangeRate = async (currency:string) =>{
     try{
     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_ENDPOINT}:4006/api/v2/db/exchange/rate`,{method:'POST',
     headers:{
@@ -180,8 +307,22 @@ import { redirect } from 'next/navigation'
     console.log(error)
     return error
   }
-  }
-  export const GetSettings = async (posid:string) =>{
+}
+export const GetConfig = async (token:string,posid:string) =>{
+  
+    //console.log(body)
+    const session = await getSession();
+    const response = await fetch(`${localendpoint}api/v1/settings`, { method: 'POST',
+      headers: {   
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' +  token
+        },
+        body: JSON.stringify({"posid":posid})
+      })
+      return response.json()
+}
+export const GetSettings = async (posid:string) =>{
   
     //console.log(body)
     const session = await getSession();
@@ -194,8 +335,8 @@ import { redirect } from 'next/navigation'
         body: JSON.stringify({"posid":posid})
       })
       return response.json()
-  }
-  export const GetCodeName = async (table:string) =>{
+}
+export const GetCodeName = async (table:string) =>{
   
     //console.log(body)
     const session = await getSession();
@@ -208,21 +349,7 @@ import { redirect } from 'next/navigation'
         body: JSON.stringify({"table":table})
       })
       return response.json()
-  }
-  // export const GetUnitcode = async () =>{
-  
-  //   //console.log(body)
-  //   const session = await getSession();
-  //   const response = await fetch(`${localendpoint}api/v1/settings/unitcode`, { method: 'POST',
-  //     headers: {   
-  //       'Accept': 'application/json',
-  //       'Content-Type': 'application/json',
-  //       'Authorization': 'Bearer ' +  session.token
-  //       },
-  //       body: JSON.stringify({"table":"BCItemUnit"})
-  //     })
-  //     return response.json()
-  // }
+}
 export const UpdateSettings = async (body:any) =>{
   
   //console.log(body)
@@ -237,3 +364,4 @@ export const UpdateSettings = async (body:any) =>{
     })
     return response.json()
 }
+

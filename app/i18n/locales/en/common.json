@@ -34,8 +34,10 @@
       "price":"Price",
       "total":"Total",
       "rowNumber":"No"
+      
     },
-    "posid":"Machin ID"
+    "posid":"Machin ID",
+    "docno":"Docno"
   },
   "settings":{
     "base_currency":"Base Currency",
@@ -84,8 +86,11 @@
     "address":"Address",
     "address_placeholder":"",
     "base_currency":"Base Currency",
-    "target_currency":"Target Currency"
-
+    "target_currency":"Target Currency",
+    "customer":"Customer",
+    "customer_placeholder":"Default Customer",
+    "docformat":"Document Format",
+    "docformat_placeholder":"@@=Machine Number,YY=Year,MM=Month,#=Offset"
   }
  
 } 

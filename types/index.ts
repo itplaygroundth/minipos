@@ -27,16 +27,20 @@ export interface Items {
     rowNumber:number;
     code:string;
     name: string;
+    whcode:string;
+    shelfcode:string;
     quantity: number;
     price:number;
     total:number;
     unit:string;
+    unitcode:string;
 }
 export interface BCAr {
-    rowNumber:number;
+   // rowNumber:number;
     code:string;
     name: string;
     address:string;
+    pricelevel:string;
    
 }
 

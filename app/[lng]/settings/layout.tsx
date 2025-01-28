@@ -33,7 +33,7 @@ export default async function SettingsLayout({ children }: SettingsLayoutProps) 
  const defaultOpen = cookieStore.get("sidebar:state")?.value === "true"
  const lngCookie = Cookies.get('lng'); // ดึงค่าจากคุกกี้
  //console.log('lngCookie:', lngCookie); // ตรวจสอบค่าที่ได้จากคุกกี้
- const initialLocale = lngCookie ? lngCookie : 'en'; // ใช้ค่า lngCookie ถ้ามี ไม่งั้นใช้ 'en'
+ const initialLocale = lngCookie ? lngCookie : 'th'; // ใช้ค่า lngCookie ถ้ามี ไม่งั้นใช้ 'en'
  const {role}= session
 
   return (
@@ -46,7 +46,7 @@ export default async function SettingsLayout({ children }: SettingsLayoutProps) 
     <Separator orientation="vertical" className="mr-2 h-4" />
     <MainNav role={role} />
     <div className="ml-auto flex items-center space-x-4">
-        <Search />
+        {/* <Search /> */}
         <LanguageToggle initialLocale={initialLocale} /> {/* ส่งค่า locale ไปยัง Client Component */}
         <UserNav />
     </div>

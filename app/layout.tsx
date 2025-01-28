@@ -32,12 +32,12 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies();
   const lngCookie = cookieStore.get('lng');
-  const initialLocale = lngCookie ? lngCookie.value : 'en'; // ค่าเริ่มต้นเป็น 'en'
+  const initialLocale = lngCookie ? lngCookie.value : 'th'; // ค่าเริ่มต้นเป็น 'en'
 
 
 
   // const toggleLanguage = () => {
-  //   const newLocale = initialLocale === 'en' ? 'th' : 'en';
+  //   const newLocale = initialLocale === 'en' ? 'th' : 'th';
   //   Cookies.set('lng', newLocale); // เก็บค่า locale ใน cookie
   //   const currentPath = window.location.pathname; // ใช้ window.location.pathname แทน asPath
   //   const newPath = `/${newLocale}${currentPath}`; // สร้างเส้นทางใหม่ที่มี locale
@@ -69,7 +69,7 @@ export default async function RootLayout({
 // export async function getInitialProps() {
 //   const cookieStore = cookies();
 //   const lngCookie = (await cookieStore).get('lng');
-//   const initialLocale = lngCookie ? lngCookie.value : 'en'; // ค่าเริ่มต้นเป็น 'en'
+//   const initialLocale = lngCookie ? lngCookie.value : 'th'; // ค่าเริ่มต้นเป็น 'en'
 
 //   return {
 //     initialLocale, // ส่งค่า locale ไปยังคอมโพเนนต์

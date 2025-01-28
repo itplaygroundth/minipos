@@ -15,19 +15,19 @@ export const Menu:IMenu[] = [{
     ShowIcon:false,
     Roles: ["user", "admin", "sa","root"]
 },
-{
-    Label:"customers",
-    Link:"customers",
-    Icon: Airplay,
-    ShowIcon:false,
-    Roles: ["user", "admin", "sa","root"]
-},
+// {
+//     Label:"customers",
+//     Link:"customers",
+//     Icon: Airplay,
+//     ShowIcon:false,
+//     Roles: ["user", "admin", "sa","root"]
+// },
 {
     Label:"settings",
     Link:"settings/account",
     Icon: Settings2,
     ShowIcon:false,
-    Roles: ["user","admin", "sa","root"] 
+    Roles: ["admin", "sa","root"] 
 }]
 
 export const Sidebar:IMenu[] = [

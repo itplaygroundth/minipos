@@ -23,7 +23,7 @@ export default async function Layout({
     // const defaultOpen = cookieStore.get("sidebar:state")?.value === "true"
     // const lngCookie = Cookies.get('lng'); // ดึงค่าจากคุกกี้
     // //console.log('lngCookie:', lngCookie); // ตรวจสอบค่าที่ได้จากคุกกี้
-    // const initialLocale = lngCookie ? lngCookie : 'en'; // ใช้ค่า lngCookie ถ้ามี ไม่งั้นใช้ 'en'
+    // const initialLocale = lngCookie ? lngCookie : 'th'; // ใช้ค่า lngCookie ถ้ามี ไม่งั้นใช้ 'en'
 
     
   return   (

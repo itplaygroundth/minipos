@@ -1,6 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useIsMobile  } from "@/hooks/use-mobile"
 import { format } from "date-fns"
 import { CalendarIcon, Check, ChevronDownIcon, ChevronsUpDown, Currency } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -8,6 +9,7 @@ import { z } from "zod"
 import { languages } from '@/app/i18n/setting'
 import { cn } from "@/lib/utils"
 import { toast } from "@/hooks/use-toast"
+import TableList from "@/components/transactions/tablelist"
 import { Button,buttonVariants } from "@/components/ui/button"
 // import { Calendar } from "@/components/ui/calendar"
 // import {
@@ -33,14 +35,17 @@ import { Input } from "@/components/ui/input"
 //   PopoverContent,
 //   PopoverTrigger,
 // } from "@/components/ui/popover"
-import { useEffect, useState } from "react"
-import { GetExchangeRate, GetSettings, UpdateSettings } from "@/actions"
+import { useEffect, useMemo, useState } from "react"
+import { GetARList, GetExchangeRate, GetSettings, UpdateSettings } from "@/actions"
 import { useTranslation } from "@/app/i18n/client"
 import { usePathname } from "next/navigation"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui"
 import Cookies from "js-cookie"
-import { iSetting } from "@/types"
+import { BCAr, iSetting } from "@/types"
+import DebouncedInput from "@/components/debouncedinput"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import Autocomplete from '@/components/ui/autocomplete'
 // const languages = [
 //   { label: "English", value: "en" },
 //   { label: "French", value: "fr" },
@@ -78,6 +83,9 @@ const accountFormSchema = z.object({
     .max(30, {
       message: "Name must not be longer than 30 characters.",
     }),
+    docformat: z
+    .string().optional(),
+    
   // currency: z
   //   .string()
   //   .min(2, {
@@ -92,6 +100,8 @@ const accountFormSchema = z.object({
   // language: z.string({
   //   required_error: "Please select a language.",
   // }),
+  customer: z
+  .string().optional(),
   baseCurrency: z.enum(["USD", "EUR", "THB"], {
     invalid_type_error: "Select a base currency",
     required_error: "Please select a base currency.",
@@ -107,55 +117,83 @@ type AccountFormValues = z.infer<typeof accountFormSchema>
 // This can come from your database or API.
 
 
-export function AccountForm() {
+export function AccountForm(config:any) {
   const pathname = usePathname()
   const lang = pathname?.split('/')[1] || languages[0]
   const {t} = useTranslation(lang,"common",undefined)
+  const {posId,location,data} = config.config
   const [settings,setSettings] = useState<iSetting>()
+  const [showPanelAr,setShowPanelAr] = useState(false)
+  const [customer,setCustomer] = useState<BCAr>()
+  const [items,setItems] = useState<BCAr[]>([])
   //const { setCustomerCurrency } = useAuthStore();
   const [customerCurrency,setCustomerCurrency] = useState("")
   const [exchangeRates, setExchangeRates] = useState<{ [key: string]: number } | null>(null)
-  const posid = Cookies.get("posid")
-
+  //const posid = Cookies.get("posid")
+  const [posid,setPosid]= useState('')
+  //const [setting,setSetting] = useState(config)
+  const isMobile = useIsMobile()
+  const [globalFilter, setGlobalFilter] = useState('')
+  const [filteredDataItem,setfilteredDataItem] = useState([])
+  const [filteredDataAr,setfilteredDataAr] = useState([])
+  const isDesktop = useMediaQuery("(min-width: 768px)")
+  
   const defaultValues: Partial<AccountFormValues> = {
     // name: "Your name",
     // dob: new Date("2023-01-23"),
-    machinenumber:posid,
+    machinenumber: config.posId,
+    docformat:`POS@@YYMM-####`,
     taxno:"0",
     address:"",
     baseCurrency:"USD",
     targetCurrency:"THB"
   
   }
+ 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues,
   })
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
+     
+         if(posId){
+          form.setValue("machinenumber",posId)
+          const obj = JSON.parse(data)
       
-       if(posid){
-       const response = await  GetSettings(posid)
+        console.log(obj)
+        form.setValue("taxno",obj.taxno)
+        form.setValue("address",location)
+        form.setValue("docformat",obj.docformat)
+        form.setValue("customer",obj.customer)
+        form.setValue("baseCurrency",obj.baseCurrency)
+        form.setValue("targetCurrency",obj.targetCurrency)
+         }
+       // setPosid(posId)
+       //const response = await  GetSettings(setting.posid)
          
-       if(response.Status){
+      // if(response.Status){
         //console.log(response.Data)
-        const {posId,location,data} = response.Data
+        
        //form.Set()
-        setSettings(response.Data)
+       setSettings(config.config)
       //   console.log(data.Data[1].key,data.Data[1].value)
       // machinenumber:"01",
       // taxnumber:"0",
       // address:"",
       // baseCurrency:"USD",
       // targetCurrency:"THB"
-      //form.setValue("machinenumber",posId)
-      const obj = JSON.parse(data)
-      console.log(obj)
-      form.setValue("taxno",obj.taxno)
-      form.setValue("address",location)
-      form.setValue("baseCurrency",obj.baseCurrency)
-      form.setValue("targetCurrency",obj.targetCurrency)
+   
+   
+     
+ 
+      const Customers = await GetARList()
+      if(Customers.Status){
+        setItems(Customers.Data)
+      }
+  
       //obj.forEach((item:any) => {
        
         //form.setValue(item.SettingKey,item.SettingValue)
@@ -193,45 +231,70 @@ export function AccountForm() {
         //   [target]: baseToTarget,
         //   [`${target}To${base}`]: targetToBase
         // })
-          }
-        }
+         // }
+       // }
        } catch (error) {
         console.error("Error fetching agent settigs:", error)
          
       }
     }
-    
+   
     fetchSettings()
-  
+ 
   },[])
 
-
-
-  function onSubmit(data: AccountFormValues) {
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+        //setShowPanelItem(false);
+        setShowPanelAr(false);  // ซ่อน Panel เมื่อกด ESC
+    } 
+    // else if (event.key === "Enter") {
+    //     if (filteredDataItem.length === 1) {
+    //         //handleSelectItem(filteredDataItem[0]); 
+    //         setGlobalFilter('');// เลือกรายการเดียวที่แสดง
+    //     } else if (filteredDataAr.length === 1) {
+    //         handleSelectAr(filteredDataAr[0]); 
+    //         //setSearchArTerm('');
+    //     }
+    // }
+};
+   useEffect(() => {
+        // เพิ่ม event listener สำหรับการกดปุ่ม
+        window.addEventListener("keydown", handleKeyDown);
+        return () => {
+            // ลบ event listener เมื่อ component ถูก unmount
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, []);
+  function onSubmit(accdata: AccountFormValues) {
 
    const update = async () => {
 
-      
+      //console.log(accdata)
 
        let udata = {
-        "posId":data.machinenumber,
+        "posId":accdata.machinenumber,
         "status":"active",
-        "location": data.address,
+        "location": accdata.address,
         "data":""}
-
+ 
         let subdata = {
-          "taxno":data.taxno,
+          "taxno":accdata.taxno,
           "taxrate":"7%",
-          "baseCurrency":data.baseCurrency,
-          "targetCurrency":data.targetCurrency,
-          "saleprice":"",
+          "baseCurrency":accdata.baseCurrency,
+          "targetCurrency":accdata.targetCurrency,
+          "customer":accdata?.customer,
+          "docformat":accdata?.docformat,
+          "pricelevel":items.find((item)=>item.code==accdata?.customer)?.pricelevel,
+          "price":"",
           "whcode":"",
           "shelfcode":""
         }
 
         if(settings){
           const obj = JSON.parse(settings?.data)
-          subdata.saleprice = obj.saleprice
+        //  console.log(obj)
+          subdata.price = obj.price
           subdata.whcode = obj.whcode
           subdata.shelfcode = obj.shelfcode
         }
@@ -250,7 +313,7 @@ export function AccountForm() {
        
   
       if(response.Status){
-        console.log(response)
+      //  console.log(response)
        // setCustomerCurrency(data.targetCurrency)
         // toast({
         //   title: t("settings.update"),
@@ -272,20 +335,13 @@ export function AccountForm() {
   }
 
 
-
-
-  // function onSubmit(data: AccountFormValues) {
-  //   console.log(data)
-  //   toast({
-  //     title: "You submitted the following values:",
-  //     description: (
-  //       <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-  //         <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-  //       </pre>
-  //     ),
-  //   })
-  // }
-
+ 
+  const modalArColumns = useMemo(() => [
+        { id: 'rowNumber', header: 'ลำดับ' },
+        { id: 'code', header: 'รหัสลูกค้า' },
+        { id: 'name', header: 'ชื่อ' },
+        { id: 'address', header: 'ที่อยู่' },
+  ], [])
   useEffect(() => {
     const fetchExchangeRates = async (base: string, target: string) => {
       try {
@@ -319,14 +375,14 @@ export function AccountForm() {
 
   return (
     <div className="space-y-6">
-    <div>
+      <div>
         <h3 className="text-lg font-medium">{t('account.title')}</h3>
         <p className="text-sm text-muted-foreground">
         {t('account.description')}
         </p>
       </div>
       <Separator />
-    <Form {...form}>
+      <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
       
         <FormField
@@ -336,10 +392,26 @@ export function AccountForm() {
             <FormItem>
               <FormLabel>{t('account.posid')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('account.posid_placeholder')} {...field} className={cn("w-50")} />
+                <Input placeholder={t('account.posid_placeholder')} {...field}  value={field.value || ''}  className={cn("w-50")} />
               </FormControl>
               <FormDescription>
               {t('account.posid_placeholder')}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+          <FormField
+          control={form.control}
+          name="docformat"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('account.docformat')}</FormLabel>
+              <FormControl>
+                <Input placeholder={t('account.docformat_placeholder')} {...field}  value={field.value || ''}  className={cn("w-50")} />
+              </FormControl>
+              <FormDescription>
+              {t('account.docformat_placeholder')}
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -352,10 +424,33 @@ export function AccountForm() {
             <FormItem>
               <FormLabel>{t('account.taxno')}</FormLabel>
               <FormControl>
-                <Input placeholder={t('account.taxno_placeholder')} {...field} className={cn("w-50")} />
+                <Input placeholder={t('account.taxno_placeholder')} {...field}  value={field.value || ''}  className={cn("w-50")} />
               </FormControl>
               <FormDescription>
               {t('account.taxno_placeholder')}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      
+        <FormField
+          control={form.control}
+          name="customer"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <div>
+                <FormLabel>เลือกลูกค้า</FormLabel>
+              </div>
+            
+              <Autocomplete
+                value={field.value}
+                onChange={field.onChange}
+                allSuggestions={items.map((item) => ({ name: item.name, code: item.code }))}
+                classname="w-full"
+              />
+              <FormDescription>
+               กำหนดรหัสลูกค้าเริ่มต้น
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -369,6 +464,7 @@ export function AccountForm() {
               <FormLabel>{t('account.address')}</FormLabel>
               <FormControl>
                 <Textarea placeholder={t('account.address_placeholder')} {...field} 
+                 value={field.value || ''} 
                 className={cn("w-[400px]")}  
                   ref={(textarea) => {
                     if (textarea) {
@@ -385,23 +481,7 @@ export function AccountForm() {
             </FormItem>
           )}
         />
-        {/* <FormField
-          control={form.control}
-          name="currency"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Currency</FormLabel>
-              <FormControl>
-                <Input placeholder="Your currency." {...field} />
-              </FormControl>
-              <FormDescription>
-                This is the name that will be displayed on your profile and in
-                emails.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        /> */}
+        
          <div className="flex space-x-4">
           <FormField
             control={form.control}
@@ -460,117 +540,14 @@ export function AccountForm() {
             )}
           />
         </div>
-        {/* <FormField
-          control={form.control}
-          name="dob"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Date of birth</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-[240px] pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormDescription>
-                Your date of birth is used to calculate your age.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        /> */}
-        {/* <FormField
-          control={form.control}
-          name="language"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Language</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      className={cn(
-                        "w-[200px] justify-between",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value
-                        ? languages.find(
-                            (language) => language.value === field.value
-                          )?.label
-                        : "Select language"}
-                      <ChevronsUpDown className="opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-[200px] p-0">
-                  <Command>
-                    <CommandInput placeholder="Search language..." />
-                    <CommandList>
-                      <CommandEmpty>No language found.</CommandEmpty>
-                      <CommandGroup>
-                        {languages.map((language) => (
-                          <CommandItem
-                            value={language.label}
-                            key={language.value}
-                            onSelect={() => {
-                              form.setValue("language", language.value)
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2",
-                                language.value === field.value
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            {language.label}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <FormDescription>
-                This is the language that will be used in the dashboard.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        /> */}
+       
         <Button type="submit">{t('settings.button.save')}</Button>
       
       </form>
-    </Form>
-    </div>
+     
+      </Form>
+    
+
+  </div>
   )
 }

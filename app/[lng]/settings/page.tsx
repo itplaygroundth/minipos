@@ -1,8 +1,13 @@
  
 import SettingsProfile from "@/components/settings/settings-profile"
+import { getSession } from "@/lib/session"
 
-export default function SettingsProfilePage() {
+export default async function SettingsProfilePage() {
+  const session = await getSession()
+  
+  const config = JSON.parse(session.config || "")
+
   return (
-   <SettingsProfile />
+   <SettingsProfile config={config} />
   )
 }

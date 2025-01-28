@@ -2,6 +2,7 @@ import { SessionOptions } from "iron-session";
 
 export interface SessionData {
   userId?: string;
+  posid?:string;
   username?: string;
   prefix?: string;
   role:string;
@@ -9,6 +10,7 @@ export interface SessionData {
   token?:string;
   customerCurrency?:string;
   lng?:string;
+  config?:string;
 }
 
 export const defaultSession: SessionData = {

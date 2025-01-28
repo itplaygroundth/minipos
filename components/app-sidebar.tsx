@@ -14,34 +14,59 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { Button } from "./ui"
+import { Login, Logout, SignOutTh } from "@/actions"
  
 
 // This is sample data.
 const data = {
   versions: ["1.1.0-alpha"],//["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
   navMain: [
-    // {
-    //   title: "Getting Started",
-    //   url: "#",
-    //   items: [
-    //     {
-    //       title: "Installation",
-    //       url: "#",
-    //     },
-    //     {
-    //       title: "Project Structure",
-    //       url: "#",
-    //     },
-    //   ],
-    // },
-    // {
-    //   title: "Building Your Application",
-    //   url: "#",
-    //   items: [
-    //     {
-    //       title: "Routing",
-    //       url: "#",
-    //     },
+    {
+      title: "หน้าจอหลัก",
+      url: "#",
+      items: [
+        {
+          title: "POS",
+          url: "home",
+        },
+        {
+          title: "นำเข้า",
+          url: "import",
+        },
+       
+      ],
+    },
+    {
+      title: "ระบบการซื้อขาย",
+      url: "#",
+      items: [
+        {
+          title: "จัดการซื้อ",
+          url: "#",
+        },
+        {
+          title: "จัดการขาย",
+          url: "#",
+        },
+        {
+          title: "คืนสินค้า/ส่วนลด",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "ระบบบัญชี",
+      url: "#",
+      items: [
+        {
+          title: "กำหนดงวด",
+          url: "#",
+        },
+        {
+          title: "ผังบัญขี",
+          url: "#",
+        },
     //     {
     //       title: "Data Fetching",
     //       url: "#",
@@ -87,16 +112,16 @@ const data = {
     //       title: "Examples",
     //       url: "#",
     //     },
-    //   ],
-    // },
-    // {
-    //   title: "API Reference",
-    //   url: "#",
-    //   items: [
-    //     {
-    //       title: "Components",
-    //       url: "#",
-    //     },
+    ],
+    },
+    {
+      title: "รายงาน",
+      url: "#",
+      items: [
+        {
+          title: "รายงานทั่วไป",
+          url: "#",
+        },
     //     {
     //       title: "File Conventions",
     //       url: "#",
@@ -117,8 +142,8 @@ const data = {
     //       title: "Edge Runtime",
     //       url: "#",
     //     },
-    //   ],
-    // },
+      ],
+    },
     // {
     //   title: "Architecture",
     //   url: "#",
@@ -157,7 +182,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           versions={data.versions}
           defaultVersion={data.versions[0]}
         />
-        <SearchForm />
+        {/* <SearchForm /> */}
       </SidebarHeader>
       <SidebarContent>
         {/* We create a SidebarGroup for each parent. */}
@@ -176,9 +201,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        ))}
+        ))
+        
+        }
+      
       </SidebarContent>
       <SidebarRail />
+      <div className="relative left-0 bottom-0 m-2 flex justify-center ">
+        <div className="flex grow items-end gap-4">
+            <Button 
+            variant="ghost"
+            className="w-[calc(15vw)] justify-center h-10 mt-5 bg-orange-400 hover:text-white hover:bg-orange-700"
+            onClick={SignOutTh}
+            > ออกจากระบบ</Button>  
+         </div>
+         </div>
     </Sidebar>
   )
 }
