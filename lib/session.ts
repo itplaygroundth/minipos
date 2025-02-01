@@ -1,5 +1,5 @@
 'use server'
-import { IronSession,getIronSession } from "iron-session";
+import { getIronSession } from "iron-session";
 
 import { SessionData,sessionOptions,defaultSession } from ".";
 import { cookies } from "next/headers";

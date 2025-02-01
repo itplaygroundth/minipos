@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { cookies } from 'next/headers'; 
-import Cookies from 'js-cookie'; 
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster"
@@ -33,17 +32,7 @@ export default async function RootLayout({
   const cookieStore = await cookies();
   const lngCookie = cookieStore.get('lng');
   const initialLocale = lngCookie ? lngCookie.value : 'th'; // ค่าเริ่มต้นเป็น 'en'
-
-
-
-  // const toggleLanguage = () => {
-  //   const newLocale = initialLocale === 'en' ? 'th' : 'th';
-  //   Cookies.set('lng', newLocale); // เก็บค่า locale ใน cookie
-  //   const currentPath = window.location.pathname; // ใช้ window.location.pathname แทน asPath
-  //   const newPath = `/${newLocale}${currentPath}`; // สร้างเส้นทางใหม่ที่มี locale
-  //   router.push(newPath); // ใช้ router จาก next/navigation
-  // };
-
+ 
   const isRTL = initialLocale === 'ar';
   return (
     <html lang={initialLocale}>
@@ -66,12 +55,4 @@ export default async function RootLayout({
   );
 }
 
-// export async function getInitialProps() {
-//   const cookieStore = cookies();
-//   const lngCookie = (await cookieStore).get('lng');
-//   const initialLocale = lngCookie ? lngCookie.value : 'th'; // ค่าเริ่มต้นเป็น 'en'
-
-//   return {
-//     initialLocale, // ส่งค่า locale ไปยังคอมโพเนนต์
-//   };
-// }
+ 

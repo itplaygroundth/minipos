@@ -9,7 +9,6 @@ import {
     Button,  
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuGroup,
     DropdownMenuItem,
     DropdownMenuLabel,
     DropdownMenuSeparator,
@@ -17,7 +16,7 @@ import {
     DropdownMenuTrigger,
   } from "@/components/ui"
 import { usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+ 
   
   export function UserNav() {
     const pathname = usePathname()

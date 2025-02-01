@@ -124,6 +124,7 @@ export default function Autocomplete({
 
   return (
     <div className={cn(classname,"max-w-xs")}>
+     
       <div className="relative">
         <Input
           type="text"
@@ -156,6 +157,7 @@ export default function Autocomplete({
           Loading...
         </div>
       )}
+      
       {suggestions.length > 0 && !isLoading && isFocused && (
         <ul
           id="suggestions-list"

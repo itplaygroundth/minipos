@@ -6,7 +6,7 @@ import { fallbackLng, languages,cookieName } from "./app/i18n/setting";
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const cookies = req.cookies; 
-  console.log("line 9 ",url.pathname)
+  //console.log("line 9 ",url.pathname)
   
   // ดึงค่า cookies
   let lng = cookies.get('i18next')?.value || url.pathname.split('/')[1] || fallbackLng; // ใช้ค่า locale จาก cookie หรือจาก URL
@@ -43,6 +43,21 @@ export async function middleware(req: NextRequest) {
     }
   }
  
+  // if (req.method === 'POST' && req.nextUrl.pathname === `/${lng}/api/upload`) {
+   
+  //   const session = await getSession();
+  //   const isLoggedIn = session.isLoggedIn !== null && session.isLoggedIn;
+
+  //   // ตรวจสอบการรับรองความถูกต้อง
+  //   if (!isLoggedIn) {
+  //     return NextResponse.redirect(new URL(`/${lng}/login`, req.url));
+  //   }
+  //   console.log(req)
+  //   return NextResponse.next();
+  //   // ตรวจสอบข้อมูลที่ส่งเข้ามา (เช่น ขนาดไฟล์ ประเภทไฟล์)
+  //   // คุณสามารถเพิ่มการตรวจสอบเพิ่มเติมที่นี่
+  // }
+
 
   // ตรวจสอบเส้นทางเมื่อเข้าหน้าแรกของภาษานั้นๆ
   if (url.pathname === `/${lng}` || url.pathname === `/${lng}/` ) {

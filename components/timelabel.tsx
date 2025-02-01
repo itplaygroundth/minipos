@@ -3,8 +3,9 @@ import { formatInTimeZone } from 'date-fns-tz'; // ถ้าใช้ฟัง�
  // ตัวอย่างการใช้ i18next สำหรับการแปล
 import { Label } from './ui';
 import { useTranslation } from '@/app/i18n/client';
+import { cn } from '@/lib/utils';
 
-const TimeLabel = ({lang}:{lang:string}) => {
+const TimeLabel = ({lang,classname=""}:{lang:string,classname:string}) => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const {t} = useTranslation(lang,"common","transaction")
     useEffect(() => {
@@ -18,7 +19,7 @@ const TimeLabel = ({lang}:{lang:string}) => {
     }, []);
 
     return (
-        <Label className='bg-gray-300 h-[20px] text-center' style={{ lineHeight: '20px' }}>
+        <Label className={cn(classname,'bg-gray-300 h-[20px] text-center')} style={{ lineHeight: '20px' }}>
             {`${t('transaction.time')} : ${formatInTimeZone(currentDate, 'Asia/Bangkok', 'dd-MM-yyyy HH:mm')}`}
         </Label>
     );

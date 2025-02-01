@@ -1,6 +1,8 @@
 import { appWithTranslation } from 'next-i18next';
 
-function MyApp({ Component, pageProps }:any) {
+import { AppProps } from 'next/app';
+
+function MyApp({ Component, pageProps }: AppProps) {
   return <Component {...pageProps} />;
 }
 

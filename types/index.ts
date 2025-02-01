@@ -43,7 +43,14 @@ export interface BCAr {
     pricelevel:string;
    
 }
-
+export interface BCCharts {
+    // rowNumber:number;
+     code:  string;
+     name1: string;
+     name2: string;
+     isheader:number;
+    
+ }
 export interface DataTableProps<TData> {
     columns: ColumnDef<TData, any>[]
     data: TData[]

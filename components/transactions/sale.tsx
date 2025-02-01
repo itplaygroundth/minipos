@@ -966,7 +966,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                             <Separator orientation="vertical" />
                             <div> <Label className={cn("text-sm font-bold")}>{`Mode:  `}</Label><Label className={cn("text-sm font-bold",!isEdit?"text-green-600":"text-green-600")}>{`${isEdit?"Edit":"Insert"}`}</Label></div>
                         </div>
-                        <TimeLabel lang={lang} />
+                        <TimeLabel classname='' lang={lang} />
                         <Label className='bg-gray-300  h-[20px] text-center' style={{ lineHeight: '20px' }}>{`${t('transaction.posid')} : ${JSON.parse(setting).posId}`}</Label>
                         <Label className='bg-gray-300 h-[20px] text-center' style={{ lineHeight: '20px' }}>{`${t('transaction.docno')} : ${docno}`}</Label>
                         <Separator orientation='horizontal' />
@@ -1065,7 +1065,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                           
                         <Button className="text-white hover:bg-gray-400" disabled={isEdit} onClick={handleOpenDialog}>[F7] กดรับเงิน</Button>
                         <Button  className="bg-blue-300 text-black-400 hover:bg-blue-400"   onClick={()=>handlerPrint()}>[F11] พิมพ์บิล</Button>
-                        <Button className='bg-red-400 text-green-800 hover:bg-red-500'  onClick={clearSession}>ยกเลิก</Button>
+                        <Button  className='bg-red-400 text-green-800 hover:bg-red-500'  onClick={clearSession}>ยกเลิก</Button>
                     
                         </div>
                     </div>

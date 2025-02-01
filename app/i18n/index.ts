@@ -3,7 +3,7 @@ import resourcesToBackend from 'i18next-resources-to-backend'
 import { initReactI18next } from 'react-i18next/initReactI18next'
 import { getOptions } from './setting'
 
-const initI18next = async (lng:string, ns:any) => {
+const initI18next = async (lng:string, ns:string) => {
   const i18nInstance = createInstance()
   await i18nInstance
     .use(initReactI18next)
@@ -12,7 +12,7 @@ const initI18next = async (lng:string, ns:any) => {
   return i18nInstance
 }
 
-export async function useTranslation(lng:string, ns:any, options = {keyPrefix:""}) {
+export async function useTranslation(lng:string, ns:string, options = {keyPrefix:""}) {
   const i18nextInstance = await initI18next(lng, ns)
   return {
     t: i18nextInstance.getFixedT(lng, Array.isArray(ns) ? ns[0] : ns, options.keyPrefix),

@@ -1,9 +1,10 @@
 'use server'
 import { getSession } from "@/lib/session";
 import { Authen } from "@/types";
+import axios from "axios";
 import { redirect } from 'next/navigation'
 const port = ":4002"
-const localendpoint = "http://192.168.1.186:3000/"
+const localendpoint = "http://192.168.1.186:8030/"
 
 
     
@@ -364,4 +365,97 @@ export const UpdateSettings = async (body:any) =>{
     })
     return response.json()
 }
+export const GetCharts = async (body:any) =>{
+  const session = await getSession();
+  const response = await fetch(`${localendpoint}api/v1/account/getchart`, { method: 'POST',
+    headers: {   
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' +  session.token
+      },
+      body: JSON.stringify({"code":""})
+    })
+    return response.json()
+}
+export async function  ImportInvoice(){
+ 
+  const session = await getSession();
+  //const formData = new FormData();
+  
+  //formData.append("xls", file);
 
+  const response = await fetch(`${localendpoint}api/v1/upload`, {method:'POST',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'multipart/form-data',
+            'Authorization': 'Bearer ' +  session.token
+        },
+       // body:formData
+    }) 
+     return response.json()
+}
+
+export async function  ImportInv(file: File){
+ 
+  try {
+  const session = await getSession();
+  const formData = new FormData();
+  
+  formData.append("file", file,file.name);
+
+  
+    const response = await axios.post(`${localendpoint}api/v1/upload`, formData, {
+        headers: {
+            'Accept': 'application/json',
+            // 'Content-Type': 'multipart/form-data' // ลบออกเพราะ axios จะตั้งค่าให้เอง
+            'Authorization': 'Bearer ' + session.token
+        }
+    });
+    return response.data;
+} catch (error) {
+    console.error("Error importing invoice:", error);
+    throw error; // หรือจัดการข้อผิดพลาดตามที่คุณต้องการ
+}
+}
+export async function ImportXls(isitem:boolean,file:File){
+//export async function ImportXls(isitem:boolean,file:File){
+   
+//console.log(file)
+  // if (!files || files.length === 0) {
+  //   throw new Error("ไฟล์ไม่ได้รับเลือก");
+  // }
+
+  // const file = files[0];
+  // if (file.type !== 'application/vnd.ms-excel' && file.type !== 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+  //   throw new Error("ไฟล์ที่เลือกไม่ใช่ไฟล์ .xls หรือ .xlsx");
+  // }
+  
+  const session = await getSession();
+  const formData = new FormData();
+ 
+  formData.append("xls", file);
+  formData.append('isitem', isitem.toString());
+  
+ 
+  const response = await fetch(`${localendpoint}api/v1/upload`, { method: 'POST',
+    headers: {   
+      'Accept': 'application/json',
+      'Content-Type': 'multipart/form-data',
+      'Authorization': 'Bearer ' +  session.token
+      },
+      body: formData
+    })
+    console.log(response)
+   return response.json()
+
+  // const response = await fetch(`${localendpoint}api/v1/invoice/importxls`, { method: 'POST',
+  //   headers: {
+  //    'Accept': 'application/json',
+  //    'Content-Type': 'multipart/form-data',
+  //   'Authorization': 'Bearer ' +  session.token
+  //   },
+  //   body: formData
+  // })
+  // return response.json();
+  //return {Status:true,Message:"Success"}
+}

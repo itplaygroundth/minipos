@@ -1,5 +1,4 @@
-import { GetSettings } from "@/actions";
-import { getSession } from "@/lib/session";
+
 import { cn } from "@/lib/utils";
 import { ReactNode } from "react";
 

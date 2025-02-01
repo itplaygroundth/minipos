@@ -8,7 +8,7 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { AppSidebar } from "@/components/app-sidebar"
 import { Separator } from "@/components/ui"
 import { MainNav } from "@/components/main-nav"
-import { Search } from "lucide-react"
+
 import LanguageToggle from "@/components/language-toggle"
 import { UserNav } from "@/components/user-nav"
 import { getSession } from "@/lib/session";

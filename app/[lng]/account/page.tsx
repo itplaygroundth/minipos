@@ -1,7 +1,5 @@
 import { GetCharts} from '@/actions';
 import ChartsComponent from '@/components/account/charts';
-import { XlsComponent } from '@/components/xls/import';
- 
  
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
@@ -18,28 +16,34 @@ const Page = async () => {
     
      //const  docno = await GetInvoiceNo(session.posid,docformat)
     // const Invoice = await GetInvoiceList(0,100,docformat.substring(0,docformat.indexOf("Y")))
-   // const chart = await GetCharts("")
+    const chart = await GetCharts("")
     // console.log(chart)
     // console.log(Invoice.Data)
 
 
-    // if(chart.Status){
-    //     const response = {
-    //         Status: chart.Status,
-    //         Message: chart.Message,
-    //         Data: {
-    //             Role:role,
-    //             Items: [],
-    //             // Customers:Customers.Data,
-    //             Setting: session.config || "",
-    //             // Docno: docno.Data,
-    //             // Invoice: Invoice.Data
-    //         }
-    //     }
+    if(chart.Status){
+        const response = {
+            Status: chart.Status,
+            Message: chart.Message,
+            Data: {
+                Role:role,
+                Items: chart.Data,
+                // Customers:Customers.Data,
+                Setting: session.config || "",
+                // Docno: docno.Data,
+                // Invoice: Invoice.Data
+            }
+        }
         return (
-            <XlsComponent />
-        )
-        
+            <ChartsComponent 
+            data={response.Data} 
+            message={response.Message} 
+            status={response.Status}
+            />
+        );
+        } else {
+            redirect(`/th/login`)
+        }
     } catch (error) {
         console.error("Error fetching data:", error);
         //return <>Error loading data</>;

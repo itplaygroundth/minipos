@@ -1,4 +1,4 @@
-import { GetARList,GetInvoiceList,GetInvoiceNo,GetItemList, GetSettings } from '@/actions';
+import { GetARList,GetInvoiceList,GetInvoiceNo,GetItemList } from '@/actions';
 import SaleComponent from '@/components/transactions/sale';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 
 const Page = async () => {
     const session = await getSession()
-    const {role,lng} = session
+    const {role} = session
     try {
     const Customers = await GetARList()
     const Items = await GetItemList(0,100)

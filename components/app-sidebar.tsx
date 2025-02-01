@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { SearchForm } from "./search-form"
+ 
 import { VersionSwitcher } from "./version-switcher"
 import {
   Sidebar,
@@ -15,7 +15,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { Button } from "./ui"
-import { Login, Logout, SignOutTh } from "@/actions"
+import {  SignOutTh } from "@/actions"
  
 
 // This is sample data.
@@ -65,7 +65,7 @@ const data = {
         },
         {
           title: "ผังบัญขี",
-          url: "#",
+          url: "account",
         },
     //     {
     //       title: "Data Fetching",
@@ -186,12 +186,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         {/* We create a SidebarGroup for each parent. */}
-        {data.navMain.map((item:any) => (
+        {data.navMain.map((item:{title:string,url:string,items:any[]}) => (
           <SidebarGroup key={item.title}>
             <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {item.items.map((item:any) => (
+                {item.items.map((item: { title: string; url: string; isActive: boolean; }) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild isActive={item.isActive}>
                       <a href={item.url}>{item.title}</a>
@@ -211,7 +211,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className="flex grow items-end gap-4">
             <Button 
             variant="ghost"
-            className="w-[calc(15vw)] justify-center h-10 mt-5 bg-orange-400 hover:text-white hover:bg-orange-700"
+            className="w-[240px] justify-center h-10 mt-5 bg-orange-400 hover:text-white hover:bg-orange-700"
             onClick={SignOutTh}
             > ออกจากระบบ</Button>  
          </div>
