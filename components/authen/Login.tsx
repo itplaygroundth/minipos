@@ -69,7 +69,7 @@ export default function LoginComponent() {
  
     const { t } = useTranslation(initialLocale,'common',undefined);
   const handleSubmit: SubmitHandler<Authen> =  async (data: z.infer<typeof loginSchema>) => {
-
+console.log({username:data.username,password:data.password,dbname:"TEST01",server:"BLACKNITRO",prefix:"TEST01",posid:data.posid})
     try {
     //const response =  await Signin({username:data.username,password:data.password,prefix:"TEST01",server:"BLACKNITRO"})
     const response =  await Login({username:data.username,password:data.password,dbname:"TEST01",server:"BLACKNITRO",prefix:"TEST01",posid:data.posid})

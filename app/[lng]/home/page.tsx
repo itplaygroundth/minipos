@@ -18,7 +18,7 @@ const Page = async () => {
  
     
     // console.log(Invoice.Data)
-
+    //console.log(JSON.stringify(session))
 
     if(Customers.Status && Items.Status && Invoice.Status){
         const response = {

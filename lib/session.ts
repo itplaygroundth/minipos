@@ -23,5 +23,14 @@ export async function getSession() {
   // };
 }
 
- 
+export async function getSessionStr() {
+  const session = await getIronSession<SessionData>(await cookies(), sessionOptions);
+
+  if (!session.isLoggedIn) {
+    session.isLoggedIn = defaultSession.isLoggedIn;
+  }
+
+    return JSON.stringify(session)
+   
+}
  

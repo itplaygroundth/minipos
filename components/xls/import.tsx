@@ -51,7 +51,7 @@ import {
     FormLabel,
     FormMessage,
   } from "@/components/ui/form"
-import { getSession } from '@/lib/session'
+import { getSession, getSessionStr } from '@/lib/session'
 
 
 interface SubItem {
@@ -113,6 +113,7 @@ export function XlsComponent()  {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [mode,setMode] = useState('')
     const formRef = React.useRef<HTMLFormElement>(null);
     const [jsonData, setJsonData] = useState("");
     // const filteredDataItem:BCCharts[] = data?.Items.filter(item =>
@@ -159,7 +160,30 @@ export function XlsComponent()  {
     ], []);
 
   const handleSelectItem = (item: Items) => {}
-  const handleLoadFile = (mode:string) => {}
+  const handleLoadFile = (mode:string) => {
+   
+    switch(mode){
+        case "sale":
+            setIsSale(true)
+            setIsBuy(false)
+            setIsExpense(false)
+            setMode("ขาย")
+            break;
+        case "buy":
+            setIsSale(false)
+            setIsBuy(true)
+            setIsExpense(false)
+            setMode("ซื้อ")
+            break;
+        case "expense":
+            setIsSale(false)
+            setIsBuy(false)
+            setIsExpense(true)
+            setMode("ค่าใช้จ่าย")
+            break;            
+    }
+   
+  }
 
   const clearState = () => {
     setItemsState(false);
@@ -173,81 +197,80 @@ export function XlsComponent()  {
     setFile(target.files[0]);
  ///   ImportXls(true,target.files[0])
   }
-  const onSubmit = (values: z.infer<typeof fileSchema>) => {
+  const onSubmit = async (values: z.infer<typeof fileSchema>) => {
     setError("");
     setSuccess("");
-    
-    console.log(values.xls);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const data = e.target?.result;
-      console.log(data)
-      if (data) {
-        const workbook = XLSX.read(data, { type: "buffer" });
-        // SheetName
-        const sheetName = workbook.SheetNames[0];
-        // Worksheet
-        const workSheet = workbook.Sheets[sheetName];
-        // Json
-        const json = XLSX.utils.sheet_to_json(workSheet);
-        setJsonData(JSON.stringify(json, null, 2));
-      }
-    };
-    reader.readAsArrayBuffer(values.xls);
-    console.log(jsonData)
-  
-    //readExcel(values.xls)
-     //let formData = new FormData();
-     //formData.append('xls', values.xls);
-    // loadExcelFile(values.xls)
-    //  axios.post(`http://192.168.1.186:8030/api/v1/upload`, formData, {
-    //     headers: {
-    //         'Accept': 'application/json',
-    //         'Content-Type': 'multipart/form-data',
-    //         // 'Authorization': 'Bearer ' +  session.token
-    //     }
-    // }).then(response => {
-    //     console.log(response.data);
-    // }).catch(error => {
-    //     console.error(error);
-    // });
+    setIsLoading(true);
 
-    //formData.append('image', values?.image);
-    //getSession().then((session) => {
-    //   //  console.log(session)
-   //console.log(formData)
+    try {
+        // Get session first
+        const session = await getSessionStr();
+        
+        // Ensure we're only using the token string
+        const token = JSON.parse(session)?.token?.toString();
+        
+        if (!token) {
+            throw new Error("No authorization token available");
+        }
 
-    // fetch(`http://192.168.1.186:8030/api/v1/invoice/xlsimport`, { method: 'POST',
-    //     headers: {
-    //     'Accept': 'application/json',
-    //     'Content-Type': 'multipart/form-data',
-    //    // 'Authorization': 'Bearer ' +  session.token
-    //     },
-    //     body: formData
-    //   }).then(response => {
-    //     console.log(response.json());
-    //   })
-    //})
-    // ImportInvoice().then((result) => {
-    //     console.log(result)
-    //  })
-    // ImportInv(values.xls).then((result) => {
-    //    console.log(result)
-    // })
-   // console.log(values);
+        const formData = new FormData();
+        formData.append('file', values.xls);
 
-    // const data = JSON.parse(JSON.stringify(values));
-    // let formData = new FormData();
-    // formData.append('name', values?.name);
-   //  formData.append('image', values?.image);
-    // ImportXls(itemState,values.xls)
+        const response = await axios.post('http://192.168.1.186:8030/api/v1/invoice/upload', formData, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'multipart/form-data',
+                'Authorization': `Bearer ${token}`
+            },
+        })
+        // .catch((err)=>{
+        //     toast({
+        //         title: "Error",
+        //         description: err.Message,
+        //         variant: "destructive",
+        //     });
+        // });
+        if(response.status==200) {
+            setSuccess("File uploaded successfully");
+            toast({
+                title: "Success",
+                description: "File uploaded successfully",
+                variant: "default",
+            });
+            setJsonData(JSON.stringify(response.data))
+        } else {
+            toast({
+                title: "Error",
+                description: response.data.Message,
+                variant: "destructive",
+            });
+        }
+        // Optional: Parse Excel data if still needed
+        // const reader = new FileReader();
+        // reader.onload = (e) => {
+        //     const data = e.target?.result;
+        //     if (data) {
+        //         const workbook = XLSX.read(data, { type: "buffer" });
+        //         const sheetName = workbook.SheetNames[0];
+        //         const workSheet = workbook.Sheets[sheetName];
+        //         const json = XLSX.utils.sheet_to_json(workSheet);
+        //         setJsonData(JSON.stringify(json, null, 2));
+        //     }
+        // };
+        // reader.readAsArrayBuffer(values.xls);
 
-    // startTransition(() => {
-    //   onboarding(formData).then((result) => {
-    //     setError(result.error);
-    //     setSuccess(result.success);
-    //   });
-    // });
+    } catch (error: any) {
+       
+        const errorMessage = error.response?.data?.message || error.message || "Failed to upload file";
+        setError(errorMessage);
+        toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
   const handleUpload = (values:z.infer<typeof fileSchema>) => {
 
@@ -387,7 +410,7 @@ export function XlsComponent()  {
                             /> */}
                         <Accordion type="single" collapsible className="w-full">
                         <AccordionItem value="item-1">
-                            <AccordionTrigger>นำเข้าข้อมูลซื้อ</AccordionTrigger>
+                            <AccordionTrigger onClick={() => handleLoadFile("buy")}>นำเข้าข้อมูลซื้อ</AccordionTrigger>
                             <AccordionContent>
                             นำเข้าไฟล์ Excel ข้อมูลซื้อ
                             </AccordionContent>
@@ -400,7 +423,7 @@ export function XlsComponent()  {
                             </AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="item-3">
-                            <AccordionTrigger>นำเข้าข้อมูลค่าใช้จ่าย</AccordionTrigger>
+                            <AccordionTrigger onClick={() => handleLoadFile("expense")}>นำเข้าข้อมูลค่าใช้จ่าย</AccordionTrigger>
                             <AccordionContent>
                             นำเข้าไฟล์ excel ข้อมูลค่าใช้จ่าย
                             </AccordionContent>
@@ -422,7 +445,7 @@ export function XlsComponent()  {
                <form ref={formRef} onSubmit={form.handleSubmit(onSubmit)} >
                <Dialog>
                         <DialogTrigger asChild>
-                            <Button onClick={()=>clearState} variant="outline">เลือกไฟล์</Button>
+                            <Button onClick={()=>clearState} disabled={mode==""} variant="outline">{`เลือกไฟล์ ${mode}`}</Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[425px]">
                             <DialogHeader>
@@ -525,6 +548,7 @@ export function XlsComponent()  {
                         } */}
                         </form>
                         </Form>
+                        {jsonData}
             </div>
       </div>
 
