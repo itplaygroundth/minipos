@@ -31,10 +31,15 @@
       "name":"Item Name",
       "quantity":"Quantity",
       "unit":"Unit",
+      "unitcode":"Unit",
       "price":"Price",
       "total":"Total",
-      "rowNumber":"No"
-      
+      "rowNumber":"No",
+      "docdate":"Date",
+      "docno":"Docno",
+      "taxno":"Taxno",
+      "itemacode":"Itemcode",
+      "itemname":"Itemname" 
     },
     "posid":"Machin ID",
     "docno":"Docno"
@@ -74,7 +79,14 @@
   "posid":{
      "title":"POS ID",
     "placeholder":"Select POSID"
-  }
+  },
+  "database":{
+    "title":"ฐานข้อมูล",
+    "placeholder":"เลือกฐานข้อมูล"
+ },
+ "sale": "sale",
+ "buy": "buy",
+ "expense": "expense"
   },
   "account":{
     "title":"Account",

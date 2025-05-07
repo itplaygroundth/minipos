@@ -1,4 +1,4 @@
-import { GetCharts} from '@/actions';
+import { GetARList, GetCharts} from '@/actions';
 import ChartsComponent from '@/components/account/charts';
 import { XlsComponent } from '@/components/xls/import';
  
@@ -11,7 +11,7 @@ const Page = async () => {
     const session = await getSession()
     const {role} = session
     try {
-    // const Customers = await GetARList()
+    const Customers = await GetARList()
     // const Items = await GetItemList(0,100)
   
     // const docformat = JSON.parse(JSON.parse(session.config).data).docformat
@@ -23,23 +23,27 @@ const Page = async () => {
     // console.log(Invoice.Data)
 
 
-    // if(chart.Status){
-    //     const response = {
-    //         Status: chart.Status,
-    //         Message: chart.Message,
-    //         Data: {
-    //             Role:role,
-    //             Items: [],
-    //             // Customers:Customers.Data,
-    //             Setting: session.config || "",
-    //             // Docno: docno.Data,
-    //             // Invoice: Invoice.Data
-    //         }
-    //     }
+    if(Customers.Status){
+        const response = {
+            Status: Customers.Status,
+            Message: Customers.Message,
+            Data: {
+                Role: role,
+                Items: [],
+                Customers: Customers.Data,
+                Setting: session.config || "",
+                Docno: "",  // Add default value
+                Invoice: [] // Add empty array
+            }
+        }
         return (
-            <XlsComponent />
+            <XlsComponent  
+                xdata={response.Data} 
+                message={response.Message} 
+                status={response.Status}
+            />
         )
-        
+    }
     } catch (error) {
         console.error("Error fetching data:", error);
         //return <>Error loading data</>;

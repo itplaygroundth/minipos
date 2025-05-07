@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/form"
 import { Button, Input, Label,Separator,Select,SelectContent, SelectTrigger, SelectItem, SelectValue } from '@/components/ui';
 import { useToast } from "@/hooks/use-toast";
-import { Signin,Login } from "@/actions";
+import { Signin,Login,GetDBList } from "@/actions";
 import { useRouter } from 'next/navigation';
 import LanguageToggle from "../language-toggle";
  
@@ -31,25 +31,27 @@ const loginSchema = z.object({
   password: z.string(),//.min(6, "Password must be at least 6 characters long"),
   prefix: z.string(),
   server: z.string(),
-  dbname: z.string(),
-  posid: z.string()
+  dbname: z.string().optional().default(""),
+  posid: z.string().optional().default("")
 });
-const posIdsEnv = process.env.NEXT_PUBLIC_POSID;
+
 export default function LoginComponent() {
     //const cookieStore = await cookies()
     //const defaultOpen = cookieStore.get("sidebar:state")?.value === "true"
   
-  
+  const posIdsEnv = process.env.NEXT_PUBLIC_POSID;
+  const posmode = process.env.NEXT_PUBLIUC_POSMODE;
 
     // ตรวจสอบว่่าไม่เป็น undefined ก่อนการแปลง
  
   const lngCookie = Cookies.get('lng');
   const posid = Cookies.get('posid')
   const initialLocale = 'th' //lngCookie ? lngCookie.valueOf() : 'th'; 
- 
+  const formRef = useRef<HTMLFormElement>(null);
   const [error, setError] = useState("");
   const [showing,setShowing] = useState(false)
   const [posIds,setPosids] = useState<any>([])
+  const [dblist,setDblist] = useState<string[]>([])
   const {toast} = useToast()
   const router = useRouter()
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -69,10 +71,13 @@ export default function LoginComponent() {
  
     const { t } = useTranslation(initialLocale,'common',undefined);
   const handleSubmit: SubmitHandler<Authen> =  async (data: z.infer<typeof loginSchema>) => {
-console.log({username:data.username,password:data.password,dbname:"TEST01",server:"BLACKNITRO",prefix:"TEST01",posid:data.posid})
+    //console.log({username:data.username,password:data.password,dbname:"TEST01",server:"BLACKNITRO",prefix:"TEST01",posid:data.posid})
     try {
     //const response =  await Signin({username:data.username,password:data.password,prefix:"TEST01",server:"BLACKNITRO"})
-    const response =  await Login({username:data.username,password:data.password,dbname:"TEST01",server:"BLACKNITRO",prefix:"TEST01",posid:data.posid})
+  
+    const response =  posmode=="POS"?await Login({username:data.username,password:data.password,dbname:"TEST01",server:"BLACKNITRO",prefix:"TEST01",posid:data.posid || ""}):
+    await Login({username:data.username,password:data.password,dbname:data.dbname || "",server:"BLACKNITRO",prefix:data.dbname || "",posid:data.dbname})
+    
      
       if (response.Status) {
         
@@ -101,39 +106,32 @@ console.log({username:data.username,password:data.password,dbname:"TEST01",serve
         description: "ยูสเซอร์หรือ รหัสผ่านไม่ถูกต้อง!",
       });
     }
-    // const res = await fetch("api/login", {
-    //   method: "POST",
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify(data),
-    // });
-
-    
-    // const result = await res.json();
-    //     if(result.Status){
-    //   // Redirect or perform any action after successful login
-    
-   
-    //   } else {
-      
-    //   toast({
-    //     variant: "destructive",
-    //     title: t('login.error'),
-    //     description: result.Message,
-    //   });
-    // }
-    //}
+ 
   };
 
   useEffect(()=>{
+
     setShowing(false)
+
     let posIds: string[] = [];
     if (posIdsEnv) {
         posIds = JSON.parse(posIdsEnv);
         setPosids(posIds)  // แปลงจาก string เป็น array
     }
+    GetDBList().then((response)=>{
+      console.log(response)
+      if(response.Status){
+        setDblist(response.Data)
+      } else {
+        toast({
+        variant: "destructive",
+        title: t('login.error'),
+        description: response.Message,
+      });
+      }
+    })
     setShowing(true)
+
   },[])
 
   if(!showing)
@@ -150,7 +148,8 @@ console.log({username:data.username,password:data.password,dbname:"TEST01",serve
         </div>
         
       <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)}>
+      <form ref={formRef}  onSubmit={form.handleSubmit(handleSubmit)}>
+      { posmode == "POS"? (
       <FormField
           control={form.control}
           name="posid"
@@ -166,19 +165,45 @@ console.log({username:data.username,password:data.password,dbname:"TEST01",serve
                 </FormControl>
                 <SelectContent>
                   {
-                  JSON.parse(posIdsEnv).map((item:any)=>(
+                 posIdsEnv && JSON.parse(posIdsEnv).map((item:any)=>(
                      <SelectItem key={item} value={`${item}`}>{`${item}`}</SelectItem>
                   ))
                   }
                 </SelectContent>
               </Select>
-              {/* <FormDescription>
-              {t('common.saleprice.placeholder')}
-              </FormDescription> */}
+              <FormMessage />
+            </FormItem>
+          )}
+        />):(
+          <div className="flex flex-row items-center gap-2"> 
+          <FormField
+          control={form.control}
+          name="dbname"
+          render={({ field }) => (
+            <FormItem className="mb-5 w-full">
+              <FormLabel>{t('common.database.title')}</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                      <SelectValue placeholder={field.value || ""}/>   
+                
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {
+                 dblist && dblist.map((item:any)=>(
+                     <SelectItem key={item.dbname} value={`${item.dbname}`}>{`${item.dbname}`}</SelectItem>
+                  ))
+                  }
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
         />
+         
+        </div>
+        ) }
         <FormField 
          control={form.control}
          name="username"
@@ -199,13 +224,37 @@ console.log({username:data.username,password:data.password,dbname:"TEST01",serve
           />
         
         <div className="mt-6">
-              <Button type="submit" className="py-2 px-4 bg-gray-700 text-white rounded hover:bg-gray-600 w-full">
+              <Button type="submit" className="py-2 px-4 bg-gray-700 text-white rounded hover:bg-gray-600 w-full"
+               onClick={async () => {
+                if (formRef.current) {
+                    formRef.current.dispatchEvent(new Event('submit', { bubbles: true }));
+                }
+
+                const result = await form.trigger();
+
+                if (!result) {
+                    const errors = form.formState.errors;
+                    let errorMessage = 'form.validationError';
+                    Object.keys(errors).forEach((key) => {
+                      console.log(key)
+                        // @ts-ignore
+                        errorMessage += `\n ${errors[key]?.message}`;
+                    });
+
+                    toast({
+                        title: ('form.error'),
+                        description: errorMessage,
+                        variant: "destructive",
+                    })
+                }
+            }}
+              >
                 {t('login.title')}
               </Button>
             </div>
             <Separator className="my-4" />
             <div className="mt-3">
-            <Button  disabled type="button" onClick={redirect} className="py-2 px-4 bg-gray-700 text-white rounded hover:bg-gray-600 w-full">
+            <Button  disabled={posmode=="PC"} type="button" onClick={redirect} className="py-2 px-4 bg-gray-700 text-white rounded hover:bg-gray-600 w-full">
                 {t('login.register')}
               </Button>
             </div>

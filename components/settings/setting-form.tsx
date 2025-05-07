@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { usePathname } from "next/navigation"
+import { redirect, usePathname } from "next/navigation"
 import { languages } from "@/app/i18n/setting"
 import { useTranslation } from "@/app/i18n/client"
 import { useEffect, useState } from "react"
@@ -72,7 +72,7 @@ export function SettingForm(config:any) {
   const pathname = usePathname()
   const lang = pathname?.split('/')[1] || languages[0]
   const {t} = useTranslation(lang,"common",undefined)
-  const {posId,location,data} = config.config
+  const {posId,location,data,customer} = config.config
   const [unitcode,setUnitcode]= useState([])
   const [whcode,setWhcode]= useState([])
   const [shelfcode,setShelfcode]= useState([])
@@ -107,15 +107,18 @@ export function SettingForm(config:any) {
       if(shelfdata.Status){
         setShelfcode(shelfdata.Data)
       }
-        //console.log(config)
+         
         setSetting(config.config)
+       // console.log(config.config)
          const {data} = config.config
-        
+         
+        if(data!=""){
          const obj = JSON.parse(data)
         //console.log(obj)
          form.setValue("price",obj?.price.toString())
          form.setValue("whcode",obj?.whcode.toString())
          form.setValue("shelfcode",obj?.shelfcode.toString())
+        }
       // if(posid) {
       //  const response = await  GetSettings(posid)
          
@@ -167,19 +170,28 @@ export function SettingForm(config:any) {
     //  if(setting){
       const newsetting = Object.assign({}, setting || {}, accdata)
       
-    //  console.log(setting)
+    // console.log(setting)
       //}
+      // console.log(config)
+      // console.log(posId)
+      //customer:customer:customer
+      //const xsetting = JSON.parse(setting.data)
+
+      console.log(setting)
+      
+    ///console.log(newsetting)
+
       const udata = {
           "posId":posId,
           "status":"active",
           "location": setting?.location,
            "data": JSON.stringify({
-            "taxno": setting ? JSON.parse(setting.data).taxno : "",
+            "taxno": setting && JSON.parse(setting.data).taxno ? JSON.parse(setting.data).taxno : "",
             "taxrate":"7%",
-            "customer":setting? JSON.parse(setting.data).customer: "",
-            "docformat":setting ? JSON.parse(setting.data).docformat:"",
-            "baseCurrency": setting ? JSON.parse(setting.data).baseCurrency : "",
-            "targetCurrency": setting ? JSON.parse(setting.data).targetCurrency : "",
+            "customer":setting && JSON.parse(setting.data).customer?JSON.parse(setting.data).customer:customer,
+            "docformat":setting && JSON.parse(setting.data).docformat? JSON.parse(setting.data).docformat:"DOYYMM-####",
+            "baseCurrency": setting && JSON.parse(setting.data).baseCurrency?JSON.parse(setting.data).baseCurrency : "USD",
+            "targetCurrency": setting && JSON.parse(setting.data).targetCurrency? JSON.parse(setting.data).targetCurrency : "THB",
             "price":newsetting.price,
             "whcode":newsetting.whcode,
             "shelfcode":newsetting.shelfcode
@@ -194,7 +206,7 @@ export function SettingForm(config:any) {
             </pre>
           ),
         })
-
+ 
         const response = await UpdateSettings(udata)
       // //    {
       // //    "posId":posid,
@@ -218,7 +230,7 @@ export function SettingForm(config:any) {
            </pre>
            ),
          })
-       
+         redirect('login')
        }else{
          toast({
            title: t("settings.update_preferences"),

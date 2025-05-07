@@ -30,9 +30,15 @@
       "name":"ชื่อสินค้า",
       "quantity":"จำนวน",
       "unit":"หน่วยนับ",
+      "unitcode":"หน่วยนับ",
       "price":"ราคา",
       "total":"ยอดรวม",
-      "rowNumber":"ลำดับ"
+      "rowNumber":"ลำดับ",
+      "docdate":"วันที่",
+      "docno":"เลขที่เอกสาร",
+      "taxno":"เลชที่ใบกำกับ",
+      "itemcode":"รหัสสินค้า",
+      "itemname":"ชื่อสินค้า" 
     },
     "time":"วันที่",
     "posid":"เลขที่เครื่อง",
@@ -73,7 +79,14 @@
     "posid":{
       "title":"POS ID",
      "placeholder":"เลือกรหัสเครื่อง"
-   }
+   },
+   "database":{
+      "title":"ฐานข้อมูล",
+      "placeholder":"เลือกฐานข้อมูล"
+   },
+   "sale": "ขาย",
+   "buy": "ซื้อ",
+   "expense": "ค่าใช้จ่าย"
   },
   "account":{
     "title":"บัญชี",

@@ -12,7 +12,7 @@ export const Login = async (body:Authen) =>{
         
     const session = await getSession();
     //const plainSession = JSON.parse(JSON.stringify(session));
-
+ 
      // const state = useAuthStore()
   
       const response = await fetch(`${localendpoint}api/v1/authen/login`, { method: 'POST',
@@ -35,11 +35,12 @@ export const Login = async (body:Authen) =>{
           session.userId = ID
           session.role = Role;
           session.posid = body.posid
+          session.dbname = body.dbname
           session.prefix = Prefix
           session.customerCurrency= Currency
           session.lng = "en"
 
-          const config = await GetConfig(result.Token,body.posid)
+          const config = await GetConfig(result.Token,body.posid || body.dbname)
         
           if(config.Status){
            
@@ -243,11 +244,32 @@ export async function  GetItemList(offset:number,pagesize:number){
     return response.json();
   } catch (error) {
     return {Status:false,Message:"ตรวจสอบการเชื่อมต่อฐานข้อมูล!"}
-  }
-       
-       
-     
+  } 
 }
+
+export async function  GetDBList(){
+ 
+  //const session = await getSession();
+  //const plainSession = JSON.parse(JSON.stringify(session));
+
+   // const state = useAuthStore()
+ 
+   try {
+    const response = await fetch(`${localendpoint}api/v1/dblist`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+       // 'Authorization': 'Bearer ' +  session.token
+      },
+      // body: JSON.stringify({"username":body.username,password:body.password,prefix:body.prefix})
+    });
+    return response.json();
+  } catch (error) {
+    return {Status:false,Message:"ตรวจสอบการเชื่อมต่อฐานข้อมูล!"}
+  } 
+}
+
 export async function SignOutTh() {
   const session = await getSession();
   
@@ -296,7 +318,8 @@ export async function Logout(lang:string) {
 }
 export const GetExchangeRate = async (currency:string) =>{
     try{
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_ENDPOINT}:4006/api/v2/db/exchange/rate`,{method:'POST',
+   //   `${process.env.NEXT_PUBLIC_BACKEND_ENDPOINT}/api/v1/invoice/upload`
+    const response = await fetch(`${"http://152.42.185.164"}:4006/api/v2/db/exchange/rate`,{method:'POST',
     headers:{
       'Accept':'application/json',
       'Content-Type':'application/json'

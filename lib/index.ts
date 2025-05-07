@@ -5,6 +5,7 @@ export interface SessionData {
   posid?:string;
   username?: string;
   prefix?: string;
+  dbname?:string;
   role:string;
   isLoggedIn: boolean;
   token?:string;

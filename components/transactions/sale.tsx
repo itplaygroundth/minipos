@@ -59,7 +59,7 @@ import {DeleteIcon,Trash2} from "lucide-react"
 import Cookies from 'js-cookie'; 
 import { AddInvoice, DeleteInv, GetDocNo, GetInvoiceNo, GetItemList, GetSettings } from '@/actions';
 import { pages } from 'next/dist/build/templates/app-page';
-import {Items,BCAr} from "@/types"
+import {Items,BCAr, SaleProps} from "@/types"
 import TableList from './tablelist'
 import DebouncedInput from '../debouncedinput'
 import TimeLabel from '../timelabel'
@@ -91,18 +91,6 @@ const saleSchema = z.object({
 
  
 
-interface SaleProps {
-    data: {
-        Items: Items[];
-        Customers: BCAr[];
-        Setting:string;
-        Docno:string;
-        Invoice:any[];
-        Role:string;
-    }
-    message: string;
-    status: boolean;
-}
 const company = process.env.NEXT_PUBLIC_COMPANY
 const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
   //  const [searchTerm, setSearchTerm] = useState('');
@@ -112,7 +100,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
  // เปลี่ยนประเภทของ items เป็น Item[]
     const [items, setItems] = useState<Items[]>([]);
     const [customer, setCustomer] = useState<BCAr>();
-    const [customerId, setCustomerId] = useState(JSON.parse(JSON.parse(data.Setting).data).customer || "");
+    const [customerId, setCustomerId] = useState(JSON.parse(data.Setting).data!=""?JSON.parse(JSON.parse(data.Setting).data).customer || "":"");
     const pathname = usePathname()
     const lang = pathname?.split('/')[1] || languages[0]
     const {toast} = useToast()
@@ -134,11 +122,11 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
     const [totalamount, setTotalAmount] = useState(0); // สถานะสำหรับยอดเงินที่แสดง
     const [taxamount, setTaxAmount] = useState(0); // สถานะสำหรับยอดเงินที่แสดง
     const [sumitemamount, setItemAmount] = useState(0); // สถานะสำหรับยอดเงินที่แสดง
-    
+    const [taxrate,setTaxrate] =  useState("7%")
     // const [receivedAmount, setReceivedAmount] = useState(0); // สถานะสำหรับยอดเงินที่รับ
     //const [rowSelection, setRowSelection] = React.useState({})
     const [rowSelection, setRowSelection] = useState({});
-    const [price,setPrice] = useState(JSON.parse(JSON.parse(data.Setting).data).price)
+    const [price,setPrice] = useState(JSON.parse(data.Setting).data!=""?JSON.parse(JSON.parse(data.Setting).data).price:0)
     const [user,setUser] = useState<BCAr>()
    // const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false); // สำหรับ Dialog รับเงิน
     const [isBillDialogOpen, setIsBillDialogOpen] = useState(false); // สำหรับ Dialog แสดงบิล
@@ -223,9 +211,19 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         setItems([]); // เคลียร์ items ใน state
         form.setValue("totalamount",0)
         form.setValue("recievemoney",0)
+        let docformat = "@@YYMM-#####"
+      
+        const {data} = JSON.parse(setting)
+        // if(!data) {
+        //     redirect(`/th/login`)
+            
+        // } else 
+        if(data)
+        docformat = JSON.parse(data).docformat
+        //console.log(docformat)
         //console.log(setting)
         //console.log(posid,JSON.parse(JSON.parse(setting).data).docformat)
-        GetInvoiceNo(posid,JSON.parse(JSON.parse(setting).data).docformat).then((response)=>{
+        GetInvoiceNo(posid,docformat).then((response)=>{
          //   console.log(response)
             if(response.Status){
                 setDocno(response.Data)
@@ -620,14 +618,32 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
         //console.log(item)
         // ตรวจสอบว่ามีสินค้านี้อยู่ในรายการหรือไม่
         
-        
+       // const {data} = JSON.parse(setting)
         
         const existingItemIndex = items.findIndex(existingItem => existingItem.code === item.code);
        // console.log(`${item}.${item[price as keyof Items]}`)
-        const whcode = JSON.parse(JSON.parse(setting).data).whcode
-        const shelfcode = JSON.parse(JSON.parse(setting).data).shelfcode
+        // const whcode = JSON.parse(JSON.parse(setting).data).whcode
+        // const shelfcode = JSON.parse(JSON.parse(setting).data).shelfcode
         const saleprice = parseFloat(item[price as keyof Items].toString())
-      
+        let whcode = "";  //JSON.parse(JSON.parse(setting).data).whcode
+        let shelfcode = "";
+        let taxrate = "7%" // JSON.parse(JSON.parse(setting).data).shelfcode
+        let docformat = "DOYYMM-####"
+        const { data } = JSON.parse(setting)
+
+        if (!data) {
+            // const conf = {customer:"ar-0001",
+            //        data:JSON.stringify({price:"price1",whcode:"01",shelfcode:"01"})}
+            whcode = "01"
+            shelfcode = "01"
+            setCustomerId("ar-0001")
+
+        } else {
+            whcode = JSON.parse(data).whcode
+            shelfcode = JSON.parse(data).shelfcode
+            setTaxrate(JSON.parse(data).taxrate)
+        }
+
         item.whcode = whcode
         item.shelfcode = shelfcode
         //console.log(items)
@@ -648,7 +664,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
        
         const total = items.reduce((total, item) => total + item.total, 0);
         setItemAmount(total)
-        setTaxAmount(total-(total/convP2DC(JSON.parse(JSON.parse(data.Setting).data).taxrate)))
+        setTaxAmount(total-(total/convP2DC(taxrate)))
         //console.log(items)
         setShowPanelItem(false);
         setQuantity(1);
@@ -827,7 +843,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                     posstatus:0,
                     BillType:0,
                     TaxType:1,
-                    TaxRate:parseFloat(JSON.parse(JSON.parse(setting).data).taxrate.replace("%","")),
+                    TaxRate:parseFloat(taxrate.replace("%","")),
                     GLFormat:"B2"
                     },
                 invoicesub:items
@@ -1181,7 +1197,7 @@ const SaleComponent:React.FC<SaleProps> = ({ data, message, status }) => {
                                     ))}
                                      <TableRow>
                                     <TableCell colSpan={columns.length-1} className="text-right">
-                                            ภาษีมูลค่าเพิ่ม:   {JSON.parse(JSON.parse(data.Setting).data).taxrate}
+                                            ภาษีมูลค่าเพิ่ม:   {JSON.parse(data.Setting).data!=""?JSON.parse(JSON.parse(data.Setting).data).taxrate:0}
                                     </TableCell>
                                     <TableCell colSpan={columns.length} className="text-right">
                                     {formatNumber(taxamount || 0, 2)}

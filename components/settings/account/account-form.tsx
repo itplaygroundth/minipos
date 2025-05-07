@@ -163,7 +163,7 @@ export function AccountForm(config:any) {
           form.setValue("machinenumber",posId)
           const obj = JSON.parse(data)
       
-        console.log(obj)
+      //  console.log(obj)
         form.setValue("taxno",obj.taxno)
         form.setValue("address",location)
         form.setValue("docformat",obj.docformat)
@@ -346,8 +346,9 @@ export function AccountForm(config:any) {
     const fetchExchangeRates = async (base: string, target: string) => {
       try {
         const usdData = await GetExchangeRate("USD")
-        const baseToUsd = base === "USD" ? 1 : 1 / usdData.rates[base]
-        const targetToUsd = target === "USD" ? 1 : 1 / usdData.rates[target]
+    
+        const baseToUsd = base === "USD" ? 1 : 1 / usdData?.rates[base]
+        const targetToUsd = target === "USD" ? 1 : 1 / usdData?.rates[target]
         
         const baseToTarget = baseToUsd / targetToUsd
         const targetToBase = targetToUsd / baseToUsd
@@ -358,7 +359,7 @@ export function AccountForm(config:any) {
           [`${target}To${base}`]: targetToBase
         })
       } catch (error) {
-        console.error("Error fetching exchange rates:", error)
+        //console.error("Error fetching exchange rates:", error)
         setExchangeRates(null)
       }
     }
